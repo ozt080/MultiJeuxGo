@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Morpion - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin-top: 30px;
+      font-size: 2.5em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      justify-content: center;
+      margin: 40px auto;
+    }
+
+    .cell {
+      background-color: white;
+      color: #00aaff;
+      font-size: 2.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: transform 0.2s;
+    }
+
+    .cell:hover {
+      transform: scale(1.05);
+    }
+
+    #status {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      background-color: white;
+      color: #00aaff;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e0f7ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Morpion 🧠</h1>
+  <div class="grid" id="grid"></div>
+  <p id="status">À toi de jouer : X</p>
+  <button onclick="resetGame()">Rejouer</button>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const status = document.getElementById("status");
+    let currentPlayer = "X";
+    let cells = Array(9).fill(null);
+
+    function checkWin() {
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      return wins.some(([a,b,c]) => cells[a] && cells[a] === cells[b] && cells[a] === cells[c]);
+    }
+
+    function handleClick(i, cell) {
+      if (cells[i] || checkWin()) return;
+      cells[i] = currentPlayer;
+      cell.textContent = currentPlayer;
+      if (checkWin()) {
+        status.textContent = `Le joueur ${currentPlayer} a gagné 🎉`;
+      } else if (cells.every(c => c)) {
+        status.textContent = "Match nul 🤝";
+      } else {
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        status.textContent = `À toi de jouer : ${currentPlayer}`;
+      }
+    }
+
+    function resetGame() {
+      cells = Array(9).fill(null);
+      grid.innerHTML = "";
+      currentPlayer = "X";
+      status.textContent = "À toi de jouer : X";
+      createGrid();
+    }
+
+    function createGrid() {
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.addEventListener("click", () => handleClick(i, cell));
+        grid.appendChild(cell);
+      }
+    }
+
+    createGrid();
+  </script>
+</body>
+</html>
