@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>8-Ball - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>8-Ball 🔮</h1>
+  <input type="text" id="question" placeholder="Pose ta question...">
+  <button onclick="ask()">Demander</button>
+  <p id="answer"></p>
+
+  <script>
+    const answers = [
+      "Oui", "Non", "Peut-être", "Certainement", "Impossible", "Repose la question", "Probablement"
+    ];
+
+    function ask() {
+      const q = document.getElementById("question").value;
+      if (!q) return;
+      const a = answers[Math.floor(Math.random() * answers.length)];
+      document.getElementById("answer").textContent = "Réponse : " + a;
+    }
+  </script>
+</body>
+</html>

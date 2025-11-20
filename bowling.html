@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bowling - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Bowling 🎳</h1>
+  <button onclick="roll()">Lancer</button>
+  <p id="pins"></p>
+
+  <script>
+    function roll() {
+      const score = Math.floor(Math.random() * 11);
+      document.getElementById("pins").textContent = `Tu as fait tomber ${score} quilles !`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Quiz 🧠</h1>
+  <div id="question"></div>
+  <div id="options"></div>
+  <p id="result"></p>
+  <button onclick="nextQuestion()">Question suivante</button>
+
+  <script>
+    const questions = [
+      {
+        q: "Quelle est la capitale de la France ?",
+        options: ["Lyon", "Paris", "Marseille", "Nice"],
+        answer: 1
+      },
+      {
+        q: "Combien font 5 × 6 ?",
+        options: ["30", "25", "35", "40"],
+        answer: 0
+      },
+      {
+        q: "Quel langage est utilisé pour le style CSS ?",
+        options: ["HTML", "Python", "CSS", "Java"],
+        answer: 2
+      }
+    ];
+
+    let current = 0;
+
+    function showQuestion() {
+      const q = questions[current];
+      document.getElementById("question").textContent = q.q;
+      const opts = document.getElementById("options");
+      opts.innerHTML = "";
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(i);
+        opts.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(i) {
+      const correct = questions[current].answer;
+      document.getElementById("result").textContent =
+        i === correct ? "Bonne réponse 🎉" : "Mauvaise réponse ❌";
+    }
+
+    function nextQuestion() {
+      current = (current + 1) % questions.length;
+      document.getElementById("result").textContent = "";
+      showQuestion();
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Foot - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Foot ⚽</h1>
+  <button onclick="play()">Jouer un match</button>
+  <p id="score"></p>
+
+  <script>
+    function play() {
+      const teamA = Math.floor(Math.random() * 5);
+      const teamB = Math.floor(Math.random() * 5);
+      document.getElementById("score").textContent = `Score : MultiJeuxGo ${teamA} - ${teamB} Adversaire`;
+    }
+  </script>
+</body>
+</html>
