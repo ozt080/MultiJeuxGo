@@ -8,7 +8,6 @@ const ASSETS = [
   "/MultiJeuxGo/icons/icon-256.png",
   "/MultiJeuxGo/icons/icon-384.png",
   "/MultiJeuxGo/icons/icon-512.png",
-  // Ajoute ici toutes tes pages de jeux:
   "/MultiJeuxGo/morpion.html",
   "/MultiJeuxGo/quiz.html",
   "/MultiJeuxGo/foot.html",
