@@ -1,0 +1,16 @@
+{
+  "name": "MultiJeuxGo",
+  "short_name": "MultiJeuxGo",
+  "description": "Plateforme de jeux avec authentification Firebase",
+  "start_url": "/MultiJeuxGo/index.html",
+  "scope": "/MultiJeuxGo/",
+  "display": "standalone",
+  "background_color": "#00f2fe",
+  "theme_color": "#4facfe",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
