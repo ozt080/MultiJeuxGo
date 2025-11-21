@@ -23,5 +23,31 @@
       document.getElementById("answer").textContent = "Réponse : " + a;
     }
   </script>
+  <!-- Script Firebase pour bloquer l'accès si non connecté -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+    // 🔧 Remplace par ta configuration Firebase
+    const firebaseConfig = {
+      apiKey: "TA_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Vérifie si l’utilisateur est connecté
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("⛔ Tu dois être connecté pour jouer !");
+        window.location.href = "login.html"; // Redirection vers la page de connexion
+      }
+    });
+  </script>
 </body>
 </html>
