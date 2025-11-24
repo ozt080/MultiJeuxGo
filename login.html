@@ -3,74 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <title>Connexion - MultiJeuxGo</title>
-  <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4facfe">
-<style>
+  <link rel="manifest" href="manifest.json">
+  <style>
     body {
+      margin: 0;
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #4facfe, #00f2fe);
       color: white;
       text-align: center;
-      padding: 40px;
+      padding: 20px;
     }
 
     h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
+      margin-top: 30px;
+      font-size: 2.2em;
+    }
+
+    form {
+      background-color: white;
+      color: #00aaff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 300px;
+      margin: 30px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
 
     input {
-      display: block;
-      margin: 10px auto;
+      width: 100%;
       padding: 10px;
-      width: 250px;
-      border-radius: 8px;
+      margin: 10px 0;
       border: none;
+      border-radius: 8px;
       font-size: 1em;
     }
 
     button {
-      margin: 10px;
       padding: 10px 20px;
       font-size: 1em;
       border: none;
       border-radius: 8px;
-      background-color: white;
-      color: #00aaff;
+      background-color: #00aaff;
+      color: white;
       cursor: pointer;
-      transition: background-color 0.3s;
     }
 
     button:hover {
-      background-color: #e0f7ff;
+      background-color: #0088cc;
     }
 
-    #status {
-      margin-top: 20px;
-      font-size: 1.1em;
+    #error {
+      color: red;
+      margin-top: 10px;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <h1>Connexion 🔑</h1>
+  <h1>🔐 Connexion à MultiJeuxGo</h1>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Mot de passe" required>
+    <button type="submit">Se connecter</button>
+    <p id="error"></p>
+  </form>
 
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Mot de passe">
+  <footer>
+    <p>&copy; 2025 MultiJeuxGo. Créé par Berkan.</p>
+  </footer>
 
-  <button onclick="register()">Créer un compte</button>
-  <button onclick="login()">Connexion</button>
-  <button onclick="logout()">Déconnexion</button>
-
-  <p id="status"></p>
-
+  <!-- Firebase Auth -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } 
-      from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-    // 🔧 Remplace par ta propre configuration Firebase
     const firebaseConfig = {
       apiKey: "TA_CLE_API",
       authDomain: "multi-jeuxgo.firebaseapp.com",
@@ -83,32 +96,22 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    async function register() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-        document.getElementById("status").textContent = "✅ Compte créé avec succès";
-      } catch (err) {
-        document.getElementById("status").textContent = "❌ " + err.message;
-      }
-    }
+    const form = document.getElementById("loginForm");
+    const error = document.getElementById("error");
 
-    async function login() {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
       const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        document.getElementById("status").textContent = "🎉 Connexion réussie";
-      } catch (err) {
-        document.getElementById("status").textContent = "❌ " + err.message;
-      }
-    }
+      const password = document.getElementById("password").value;
 
-    async function logout() {
-      await signOut(auth);
-      document.getElementById("status").textContent = "🚪 Déconnecté";
-    }
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          window.location.href = "index.html"; // Redirection après connexion
+        })
+        .catch((err) => {
+          error.textContent = "⛔ Email ou mot de passe incorrect.";
+        });
+    });
   </script>
 </body>
 </html>
