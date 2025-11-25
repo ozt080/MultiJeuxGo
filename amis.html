@@ -40,8 +40,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
@@ -89,21 +89,44 @@
       if (!user) return;
 
       const querySnapshot = await getDocs(collection(db, "amis"));
-      let html = "";
+      let amis = [];
+
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
         if (data.from === user.email || data.to === user.email) {
-          html += `<p>${data.from} ➝ ${data.to} (${data.status})</p>`;
+          const amiEmail = data.from === user.email ? data.to : data.from;
+          amis.push(amiEmail);
         }
       });
-      document.getElementById("friendsList").innerHTML = html || "Aucun ami pour l'instant.";
+
+      // Écoute en direct les statuts des amis
+      onSnapshot(collection(db, "users"), (snapshot) => {
+        let html = "";
+        snapshot.forEach((docSnap) => {
+          const u = docSnap.data();
+          if (amis.includes(u.email)) {
+            html += `<p>${dotFor(u.status)} ${u.name || u.email}</p>`;
+          }
+        });
+        document.getElementById("friendsList").innerHTML = html || "Aucun ami pour l'instant.";
+      });
+    }
+
+    function dotFor(status) {
+      const map = {
+        online: "#2ecc71",   // vert
+        offline: "#e74c3c",  // rouge
+        playing: "#3498db"   // bleu
+      };
+      const color = map[status] || "#bdc3c7";
+      return `<span style="color:${color}; font-size:16px;">●</span>`;
     }
 
     // Exposer la fonction au bouton HTML
     window.inviterAmi = inviterAmi;
 
-    // Attendre que l'utilisateur soit connecté avant de charger les amis
-    auth.onAuthStateChanged((user) => {
+    // Charger les amis quand l'utilisateur est connecté
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         chargerAmis();
       } else {

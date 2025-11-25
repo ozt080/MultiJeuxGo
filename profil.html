@@ -95,8 +95,11 @@
 
     logoutBtn.addEventListener("click", () => {
       signOut(auth).then(() => {
-        window.location.href = "login.html";
-      });
+  setDoc(doc(db, "users", auth.currentUser.uid), {
+    status: "offline"
+  }, { merge: true });
+  window.location.href = "login.html";
+});
     });
   </script>
 </body>
