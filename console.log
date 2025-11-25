@@ -1,0 +1,4 @@
+if (!user) {
+  document.getElementById("friendsList").textContent = "⛔ Connectez-vous pour voir vos amis.";
+  return;
+}
