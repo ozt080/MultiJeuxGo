@@ -19,12 +19,18 @@
       border: none;
       font-size: 1em;
     }
-    #result, #friendsList {
+    #result, #friendsList, #invitations {
       margin-top: 20px;
       background: white;
       color: #00aaff;
       padding: 15px;
       border-radius: 8px;
+    }
+    button.action {
+      background-color: #00aaff;
+      color: white;
+      margin: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -35,13 +41,17 @@
   <button onclick="inviterAmi()">Inviter</button>
 
   <div id="result"></div>
+
   <h2>Liste d'amis</h2>
   <div id="friendsList">Chargement...</div>
+
+  <h2>Invitations reçues</h2>
+  <div id="invitations">Chargement...</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, updateDoc, deleteDoc, getDocs, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
@@ -79,6 +89,7 @@
         });
         document.getElementById("result").textContent = `✅ Invitation envoyée à ${email}`;
         chargerAmis();
+        chargerInvitations();
       } catch (err) {
         document.getElementById("result").textContent = "Erreur : " + err.message;
       }
@@ -93,13 +104,15 @@
 
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data.from === user.email || data.to === user.email) {
+        if (
+          (data.from === user.email || data.to === user.email) &&
+          data.status === "accepté"
+        ) {
           const amiEmail = data.from === user.email ? data.to : data.from;
           amis.push(amiEmail);
         }
       });
 
-      // Écoute en direct les statuts des amis
       onSnapshot(collection(db, "users"), (snapshot) => {
         let html = "";
         snapshot.forEach((docSnap) => {
@@ -112,25 +125,61 @@
       });
     }
 
+    async function chargerInvitations() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const querySnapshot = await getDocs(collection(db, "amis"));
+      let html = "";
+
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const docId = docSnap.id;
+        if (data.to === user.email && data.status === "invitation envoyée") {
+          html += `<p>${data.from} souhaite vous ajouter.<br>
+            <button class="action" onclick="accepterInvitation('${docId}')">✅ Accepter</button>
+            <button class="action" onclick="refuserInvitation('${docId}')">❌ Refuser</button>
+          </p>`;
+        }
+      });
+
+      document.getElementById("invitations").innerHTML = html || "Aucune invitation reçue.";
+    }
+
+    async function accepterInvitation(docId) {
+      await updateDoc(doc(db, "amis", docId), {
+        status: "accepté"
+      });
+      chargerAmis();
+      chargerInvitations();
+    }
+
+    async function refuserInvitation(docId) {
+      await deleteDoc(doc(db, "amis", docId));
+      chargerInvitations();
+    }
+
     function dotFor(status) {
       const map = {
-        online: "#2ecc71",   // vert
-        offline: "#e74c3c",  // rouge
-        playing: "#3498db"   // bleu
+        online: "#2ecc71",
+        offline: "#e74c3c",
+        playing: "#3498db"
       };
       const color = map[status] || "#bdc3c7";
       return `<span style="color:${color}; font-size:16px;">●</span>`;
     }
 
-    // Exposer la fonction au bouton HTML
     window.inviterAmi = inviterAmi;
+    window.accepterInvitation = accepterInvitation;
+    window.refuserInvitation = refuserInvitation;
 
-    // Charger les amis quand l'utilisateur est connecté
     onAuthStateChanged(auth, (user) => {
       if (user) {
         chargerAmis();
+        chargerInvitations();
       } else {
         document.getElementById("friendsList").textContent = "⛔ Connectez-vous pour voir vos amis.";
+        document.getElementById("invitations").textContent = "⛔ Connectez-vous pour voir vos invitations.";
       }
     });
   </script>
