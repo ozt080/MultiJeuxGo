@@ -48,6 +48,9 @@
   <h2>Invitations reçues</h2>
   <div id="invitations">Chargement...</div>
 
+  <!-- 🔔 Son de notification -->
+  <audio id="notifSound" src="https://assets.mixkit.co/sfx/download/mixkit-bell-notification-933.mp3" preload="auto"></audio>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
@@ -67,6 +70,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // ✅ Envoyer une invitation
     async function inviterAmi() {
       const email = document.getElementById("search").value.trim();
       const user = auth.currentUser;
@@ -88,13 +92,12 @@
           status: "invitation envoyée"
         });
         document.getElementById("result").textContent = `✅ Invitation envoyée à ${email}`;
-        chargerAmis();
-        chargerInvitations();
       } catch (err) {
         document.getElementById("result").textContent = "Erreur : " + err.message;
       }
     }
 
+    // ✅ Charger la liste d'amis acceptés
     async function chargerAmis() {
       const user = auth.currentUser;
       if (!user) return;
@@ -125,40 +128,46 @@
       });
     }
 
-    async function chargerInvitations() {
+    // ✅ Charger les invitations reçues en direct
+    let invitationsConnues = [];
+    function chargerInvitationsEnDirect() {
       const user = auth.currentUser;
       if (!user) return;
 
-      const querySnapshot = await getDocs(collection(db, "amis"));
-      let html = "";
-
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const docId = docSnap.id;
-        if (data.to === user.email && data.status === "invitation envoyée") {
-          html += `<p>${data.from} souhaite vous ajouter.<br>
-            <button class="action" onclick="accepterInvitation('${docId}')">✅ Accepter</button>
-            <button class="action" onclick="refuserInvitation('${docId}')">❌ Refuser</button>
-          </p>`;
+      onSnapshot(collection(db, "amis"), (snapshot) => {
+        let html = "";
+        const nouvelles = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const docId = docSnap.id;
+          if (data.to === user.email && data.status === "invitation envoyée") {
+            html += `<p>${data.from} souhaite vous ajouter.<br>
+              <button class="action" onclick="accepterInvitation('${docId}')">✅ Accepter</button>
+              <button class="action" onclick="refuserInvitation('${docId}')">❌ Refuser</button>
+            </p>`;
+            if (!invitationsConnues.includes(docId)) nouvelles.push(docId);
+          }
+        });
+        document.getElementById("invitations").innerHTML = html || "Aucune invitation reçue.";
+        if (nouvelles.length > 0) {
+          document.getElementById("notifSound").play();
+          invitationsConnues.push(...nouvelles);
         }
       });
-
-      document.getElementById("invitations").innerHTML = html || "Aucune invitation reçue.";
     }
 
+    // ✅ Accepter une invitation
     async function accepterInvitation(docId) {
-  await updateDoc(doc(db, "amis", docId), {
-    status: "accepté"
-  });
-  chargerAmis();
-  chargerInvitationsEnDirect();
-}
+      await updateDoc(doc(db, "amis", docId), { status: "accepté" });
+      chargerAmis();
+    }
 
+    // ✅ Refuser une invitation
     async function refuserInvitation(docId) {
       await deleteDoc(doc(db, "amis", docId));
-      chargerInvitations();
     }
 
+    // ✅ Statut en direct (● vert/rouge/bleu)
     function dotFor(status) {
       const map = {
         online: "#2ecc71",
@@ -169,14 +178,16 @@
       return `<span style="color:${color}; font-size:16px;">●</span>`;
     }
 
+    // ✅ Rendre les fonctions accessibles
     window.inviterAmi = inviterAmi;
     window.accepterInvitation = accepterInvitation;
     window.refuserInvitation = refuserInvitation;
 
+    // ✅ Initialisation
     onAuthStateChanged(auth, (user) => {
       if (user) {
         chargerAmis();
-        chargerInvitations();
+        chargerInvitationsEnDirect();
       } else {
         document.getElementById("friendsList").textContent = "⛔ Connectez-vous pour voir vos amis.";
         document.getElementById("invitations").textContent = "⛔ Connectez-vous pour voir vos invitations.";
