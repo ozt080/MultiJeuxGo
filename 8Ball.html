@@ -29,29 +29,61 @@
   </script>
   <!-- Script Firebase pour bloquer l'accès si non connecté -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+  import { getFirestore, addDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-    // 🔧 Remplace par ta configuration Firebase
-    const firebaseConfig = {
-      apiKey: "TA_CLE_API",
-      authDomain: "multi-jeuxgo.firebaseapp.com",
-      projectId: "multi-jeuxgo",
-      storageBucket: "multi-jeuxgo.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
-    };
+  const firebaseConfig = {
+    apiKey: "TA_VRAIE_CLE_API",
+    authDomain: "multi-jeuxgo.firebaseapp.com",
+    projectId: "multi-jeuxgo",
+    storageBucket: "multi-jeuxgo.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    // Vérifie si l’utilisateur est connecté
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        alert("⛔ Tu dois être connecté pour jouer !");
-        window.location.href = "login.html"; // Redirection vers la page de connexion
-      }
+  const messagesDiv = document.getElementById("messages");
+  const input = document.getElementById("messageInput");
+
+  async function sendMessage() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("⛔ Vous devez être connecté pour envoyer un message.");
+      return;
+    }
+    const text = input.value.trim();
+    if (text === "") return;
+
+    await addDoc(collection(db, "messages"), {
+      text: text,
+      user: user.email,
+      createdAt: new Date()
     });
-  </script>
+    input.value = "";
+  }
+
+  // Affichage en direct des messages
+  const q = query(collection(db, "messages"), orderBy("createdAt"));
+  onSnapshot(q, (snapshot) => {
+    messagesDiv.innerHTML = "";
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      messagesDiv.innerHTML += `<p><strong>${data.user}:</strong> ${data.text}</p>`;
+    });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // auto-scroll
+  });
+</script>
+
+  <div id="chatBox" style="margin-top:20px; background:white; color:#00aaff; padding:15px; border-radius:8px; max-width:400px; margin:auto;">
+  <h3>💬 Messagerie</h3>
+  <div id="messages" style="height:150px; overflow-y:auto; border:1px solid #ccc; padding:10px; background:#f9f9f9; color:black;"></div>
+  <input type="text" id="messageInput" placeholder="Écrire un message..." style="width:70%; padding:8px;">
+  <button onclick="sendMessage()" style="padding:8px 12px; background:#00aaff; color:white; border:none; border-radius:6px;">Envoyer</button>
+</div>
+
 </body>
 </html>
