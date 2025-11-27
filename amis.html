@@ -147,12 +147,12 @@
     }
 
     async function accepterInvitation(docId) {
-      await updateDoc(doc(db, "amis", docId), {
-        status: "accepté"
-      });
-      chargerAmis();
-      chargerInvitations();
-    }
+  await updateDoc(doc(db, "amis", docId), {
+    status: "accepté"
+  });
+  chargerAmis();
+  chargerInvitationsEnDirect();
+}
 
     async function refuserInvitation(docId) {
       await deleteDoc(doc(db, "amis", docId));
