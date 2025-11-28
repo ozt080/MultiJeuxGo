@@ -41,6 +41,7 @@
     a {
       color: #00aaff;
       text-decoration: none;
+      font-size: 0.95em;
     }
     #error, #resetMsg {
       color: red;
@@ -48,6 +49,10 @@
     }
     #resetMsg.success {
       color: green;
+    }
+    #resetBox {
+      display: none;
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -57,15 +62,14 @@
     <input type="email" id="email" placeholder="Email" required>
     <input type="password" id="password" placeholder="Mot de passe" required>
     <button type="submit">Se connecter</button>
-<p>
-  <a href="register.html">Créer un compte</a> |
-  <a href="#" onclick="showResetForm()">Mot de passe oublié ?</a>
-</p>
-
+    <p>
+      <a href="register.html">Créer un compte</a> |
+      <a href="#" onclick="showResetForm()">Mot de passe oublié ?</a>
+    </p>
     <p id="error"></p>
   </form>
 
-  <div id="resetBox" style="display:none;">
+  <div id="resetBox">
     <form>
       <input type="email" id="resetEmail" placeholder="Votre email">
       <button type="button" onclick="sendReset()">Réinitialiser le mot de passe</button>
