@@ -2,61 +2,42 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Profil - MultiJeuxGo</title>
+  <title>Mon Profil - MultiJeuxGo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4facfe">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: white;
-      text-align: center;
-      padding: 20px;
-    }
-    form {
-      background: white;
-      color: #00aaff;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 300px;
-      margin: 30px auto;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-    }
-    button {
-      background: #00aaff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0088cc;
-    }
-    #msg {
-      margin-top: 10px;
-      font-size: 0.9em;
-    }
-    #avatarPreview {
-      font-size: 2em;
-      margin: 10px 0;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+    <a href="profil.html">Mon Profil</a>
+  </header>
+
   <h1>👤 Mon Profil</h1>
-  <form>
-    <input id="prenom" placeholder="Votre prénom">
-    <input id="avatar" placeholder="Emoji ou URL avatar">
-    <div id="avatarPreview">🙂</div>
-    <button id="savePrenom">Enregistrer</button>
-    <p id="msg"></p>
-  </form>
+
+  <div class="card">
+    <h3>Informations personnelles</h3>
+    <p><b>Email :</b> <span id="email">...</span></p>
+    <p><b>Prénom :</b> <span id="prenom">...</span></p>
+    <p><b>Avatar :</b> <span id="avatar">🙂</span></p>
+    <p><b>Rang :</b> <span id="rang">1200</span></p>
+  </div>
+
+  <div class="card">
+    <h3>Modifier mon profil</h3>
+    <input id="newPrenom" placeholder="Nouveau prénom">
+    <input id="newAvatar" placeholder="Nouvel avatar (emoji)">
+    <button class="btn" id="updateBtn">Mettre à jour</button>
+  </div>
+
+  <div class="card">
+    <h3>Statistiques</h3>
+    <p><b>Global :</b> <span id="statsGlobal">0 joués, 0 gagnés, 0 perdus</span></p>
+    <p><b>Ludo :</b> <span id="statsLudo">0 joués, 0 gagnés, 0 perdus</span></p>
+    <p><b>Uno :</b> <span id="statsUno">0 joués, 0 gagnés, 0 perdus</span></p>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -72,56 +53,68 @@
   appId: "1:181253022362:web:3eca9851efdb7541a5f523",
   measurementId: "G-YKC3SHW17Q"
 };
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const prenomInput = document.getElementById("prenom");
-    const avatarInput = document.getElementById("avatar");
-    const avatarPreview = document.getElementById("avatarPreview");
-    const msg = document.getElementById("msg");
+    const emailEl = document.getElementById("email");
+    const prenomEl = document.getElementById("prenom");
+    const avatarEl = document.getElementById("avatar");
+    const rangEl = document.getElementById("rang");
+    const statsGlobalEl = document.getElementById("statsGlobal");
+    const statsLudoEl = document.getElementById("statsLudo");
+    const statsUnoEl = document.getElementById("statsUno");
 
-    // Affiche l’avatar en direct
-    avatarInput.addEventListener("input", () => {
-      avatarPreview.textContent = avatarInput.value || "🙂";
-    });
+    const newPrenom = document.getElementById("newPrenom");
+    const newAvatar = document.getElementById("newAvatar");
+    const updateBtn = document.getElementById("updateBtn");
 
-    // Charger les infos existantes
+    let currentUser = null;
+
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        alert("⛔ Vous devez être connecté.");
         window.location.href = "login.html";
         return;
       }
-      const uid = user.uid;
-      const ref = doc(db, "joueurs", uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data();
-        prenomInput.value = data.prenom || "";
-        avatarInput.value = data.avatar || "🙂";
-        avatarPreview.textContent = data.avatar || "🙂";
-      }
+      currentUser = user;
+      await chargerProfil(user.uid);
     });
 
-    // Sauvegarder les modifications
-    document.getElementById("savePrenom").addEventListener("click", async (e) => {
-      e.preventDefault();
-      const user = auth.currentUser;
-      if (!user) return;
-      const uid = user.uid;
-      const prenom = prenomInput.value.trim();
-      const avatar = avatarInput.value.trim() || "🙂";
+    async function chargerProfil(uid) {
+      const snap = await getDoc(doc(db, "joueurs", uid));
+      if (!snap.exists()) return;
+      const data = snap.data();
 
-      if (!prenom) {
-        msg.textContent = "⛔ Prénom requis.";
-        return;
-      }
+      emailEl.textContent = data.email || "...";
+      prenomEl.textContent = data.prenom || "...";
+      avatarEl.textContent = data.avatar || "🙂";
+      rangEl.textContent = data.rang ?? 1200;
 
-      await setDoc(doc(db, "joueurs", uid), { prenom, avatar }, { merge: true });
-      msg.textContent = "✅ Profil mis à jour !";
-      avatarPreview.textContent = avatar;
+      const g = data.stats?.global || { joués: 0, gagnés: 0, perdus: 0 };
+      statsGlobalEl.textContent = `${g.joués} joués, ${g.gagnés} gagnés, ${g.perdus} perdus`;
+
+      const l = data.stats?.ludo || { joués: 0, gagnés: 0, perdus: 0 };
+      statsLudoEl.textContent = `${l.joués} joués, ${l.gagnés} gagnés, ${l.perdus} perdus`;
+
+      const u = data.stats?.uno || { joués: 0, gagnés: 0, perdus: 0 };
+      statsUnoEl.textContent = `${u.joués} joués, ${u.gagnés} gagnés, ${u.perdus} perdus`;
+    }
+
+    updateBtn.addEventListener("click", async () => {
+      if (!currentUser) return;
+      const prenom = newPrenom.value.trim();
+      const avatar = newAvatar.value.trim() || "🙂";
+
+      await setDoc(doc(db, "joueurs", currentUser.uid), {
+        prenom: prenom || undefined,
+        avatar,
+        updatedAt: Date.now()
+      }, { merge: true });
+
+      alert("✅ Profil mis à jour !");
+      await chargerProfil(currentUser.uid);
+      newPrenom.value = "";
+      newAvatar.value = "";
     });
   </script>
 </body>

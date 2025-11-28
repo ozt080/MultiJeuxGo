@@ -2,59 +2,36 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Amis - MultiJeuxGo</title>
+  <title>Mes Amis - MultiJeuxGo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4facfe">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: white;
-      text-align: center;
-      padding: 20px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 1em;
-    }
-    button {
-      background: #00aaff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0088cc;
-    }
-    #amisList {
-      background: white;
-      color: #00aaff;
-      padding: 15px;
-      border-radius: 8px;
-      max-width: 400px;
-      margin: 20px auto;
-      text-align: left;
-    }
-    .ami {
-      padding: 5px;
-      border-bottom: 1px solid #ccc;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>👥 Gestion des Amis</h1>
-  <input type="text" id="amiEmail" placeholder="Email de l'ami">
-  <button onclick="addFriend()">Ajouter</button>
-  <div id="amisList">Chargement...</div>
-  <button onclick="window.location.href='index.html'">🏠 Accueil</button>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+    <a href="profil.html">Mon Profil</a>
+  </header>
+
+  <h1>👥 Mes Amis</h1>
+
+  <div class="card">
+    <h3>Ajouter un ami</h3>
+    <input id="amiUid" placeholder="UID de l'ami">
+    <button class="btn" id="addAmiBtn">Ajouter</button>
+  </div>
+
+  <div class="card">
+    <h3>Liste de mes amis</h3>
+    <div id="amisList">Chargement...</div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, addDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
   apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
@@ -70,46 +47,51 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    const addAmiBtn = document.getElementById("addAmiBtn");
+    const amiUidInput = document.getElementById("amiUid");
     const amisList = document.getElementById("amisList");
-    const amiEmailInput = document.getElementById("amiEmail");
 
-    let currentUserEmail = "";
+    let currentUser = null;
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
-        alert("⛔ Vous devez être connecté pour gérer vos amis.");
         window.location.href = "login.html";
         return;
       }
-      currentUserEmail = user.email;
-      chargerAmis();
+      currentUser = user;
+
+      const col = collection(db, "amis", user.uid, "list");
+      onSnapshot(col, async (snap) => {
+        const items = snap.docs.map(d => d.id);
+        amisList.innerHTML = "";
+        for (const uid of items) {
+          const nom = await getPrenom(uid);
+          const avatar = await getAvatar(uid);
+          amisList.innerHTML += `
+            <div class="player">
+              <span class="avatar">${avatar}</span>
+              <span class="name">${nom}</span>
+            </div>`;
+        }
+      });
     });
 
-    async function addFriend() {
-      const amiEmail = amiEmailInput.value.trim();
-      if (!amiEmail) return;
-      await addDoc(collection(db, "amis"), {
-        from: currentUserEmail,
-        to: amiEmail,
-        status: "en attente",
-        createdAt: new Date()
-      });
-      amiEmailInput.value = "";
+    addAmiBtn.addEventListener("click", async () => {
+      const amiUid = amiUidInput.value.trim();
+      if (!amiUid || !currentUser) return;
+      await setDoc(doc(db, "amis", currentUser.uid, "list", amiUid), { since: Date.now() });
+      amiUidInput.value = "";
+    });
+
+    async function getPrenom(uid) {
+      const s = await getDoc(doc(db, "joueurs", uid));
+      return s.exists() ? s.data().prenom : "Joueur";
     }
 
-    function chargerAmis() {
-      const q = query(collection(db, "amis"), where("from", "==", currentUserEmail));
-      onSnapshot(q, (snapshot) => {
-        amisList.innerHTML = "";
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          amisList.innerHTML += `<div class="ami">➡️ ${data.to} (${data.status})</div>`;
-        });
-        if (amisList.innerHTML === "") amisList.textContent = "Aucun ami ajouté.";
-      });
+    async function getAvatar(uid) {
+      const s = await getDoc(doc(db, "joueurs", uid));
+      return s.exists() ? (s.data().avatar || "🙂") : "🙂";
     }
-
-    window.addFriend = addFriend;
   </script>
 </body>
 </html>
