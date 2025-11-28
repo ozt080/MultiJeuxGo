@@ -2,36 +2,27 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Créer un compte - MultiJeuxGo</title>
+  <title>Inscription - MultiJeuxGo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#4facfe">
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4facfe">
   <style>
     body {
-      margin: 0;
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #4facfe, #00f2fe);
       color: white;
       text-align: center;
       padding: 20px;
     }
-
-    h1 {
-      margin-top: 30px;
-      font-size: 2.2em;
-    }
-
     form {
-      background-color: white;
+      background: white;
       color: #00aaff;
       padding: 20px;
       border-radius: 12px;
       max-width: 300px;
       margin: 30px auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-
-    input {
+    input, button {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
@@ -39,60 +30,46 @@
       border-radius: 8px;
       font-size: 1em;
     }
-
     button {
-      padding: 10px 20px;
-      font-size: 1em;
-      border: none;
-      border-radius: 8px;
-      background-color: #00aaff;
+      background: #00aaff;
       color: white;
       cursor: pointer;
     }
-
     button:hover {
-      background-color: #0088cc;
+      background: #0088cc;
     }
-
+    a {
+      color: #00aaff;
+      text-decoration: none;
+    }
     #error {
       color: red;
-      margin-top: 10px;
-    }
-
-    footer {
-      margin-top: 40px;
       font-size: 0.9em;
-      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <h1>📝 Créer un compte MultiJeuxGo</h1>
+  <h1>🆕 Créer un compte</h1>
   <form id="registerForm">
     <input type="email" id="email" placeholder="Email" required>
     <input type="password" id="password" placeholder="Mot de passe" required>
     <button type="submit">S'inscrire</button>
+    <p><a href="login.html">Déjà inscrit ? Se connecter</a></p>
     <p id="error"></p>
   </form>
 
-  <footer>
-    <p>&copy; 2025 MultiJeuxGo. Créé par Berkan.</p>
-  </footer>
-
-  <!-- Firebase Auth -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
-  authDomain: "multijeugo.firebaseapp.com",
-  projectId: "multijeugo",
-  storageBucket: "multijeugo.firebasestorage.app",
-  messagingSenderId: "181253022362",
-  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
-  measurementId: "G-YKC3SHW17Q"
-};
+      apiKey: "TA_VRAIE_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -100,18 +77,22 @@
     const form = document.getElementById("registerForm");
     const error = document.getElementById("error");
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          window.location.href = "index.html"; // Redirection après inscription
-        })
-        .catch((err) => {
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        window.location.href = "index.html";
+      } catch (err) {
+        if (err.code === "auth/email-already-in-use") {
+          error.textContent = "⛔ Cet email est déjà utilisé. Veuillez vous connecter.";
+        } else if (err.code === "auth/weak-password") {
+          error.textContent = "⛔ Mot de passe trop faible (minimum 6 caractères).";
+        } else {
           error.textContent = "⛔ Erreur : " + err.message;
-        });
+        }
+      }
     });
   </script>
 </body>

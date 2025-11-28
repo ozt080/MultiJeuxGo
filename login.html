@@ -7,12 +7,48 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4facfe">
   <style>
-    body { font-family: Poppins, sans-serif; background: linear-gradient(135deg,#4facfe,#00f2fe); color:white; text-align:center; padding:20px; }
-    form { background:white; color:#00aaff; padding:20px; border-radius:12px; max-width:300px; margin:30px auto; }
-    input,button { width:100%; padding:10px; margin:10px 0; border:none; border-radius:8px; font-size:1em; }
-    button { background:#00aaff; color:white; cursor:pointer; }
-    button:hover { background:#0088cc; }
-    #error { color:red; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    form {
+      background: white;
+      color: #00aaff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 300px;
+      margin: 30px auto;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+    button {
+      background: #00aaff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0088cc;
+    }
+    a {
+      color: #00aaff;
+      text-decoration: none;
+    }
+    #error, #resetMsg {
+      color: red;
+      font-size: 0.9em;
+    }
+    #resetMsg.success {
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -21,13 +57,22 @@
     <input type="email" id="email" placeholder="Email" required>
     <input type="password" id="password" placeholder="Mot de passe" required>
     <button type="submit">Se connecter</button>
-    <p><a href="register.html" style="color:#00aaff;">Créer un compte</a></p>
+    <p><a href="register.html">Créer un compte</a></p>
+    <p><a href="#" onclick="showResetForm()">Mot de passe oublié ?</a></p>
     <p id="error"></p>
   </form>
 
+  <div id="resetBox" style="display:none;">
+    <form>
+      <input type="email" id="resetEmail" placeholder="Votre email">
+      <button type="button" onclick="sendReset()">Réinitialiser le mot de passe</button>
+      <p id="resetMsg"></p>
+    </form>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "TA_VRAIE_CLE_API",
@@ -55,6 +100,23 @@
         error.textContent = "⛔ Email ou mot de passe incorrect.";
       }
     });
+
+    window.showResetForm = function () {
+      document.getElementById("resetBox").style.display = "block";
+    };
+
+    window.sendReset = async function () {
+      const email = document.getElementById("resetEmail").value;
+      const resetMsg = document.getElementById("resetMsg");
+      try {
+        await sendPasswordResetEmail(auth, email);
+        resetMsg.textContent = "📩 Email de réinitialisation envoyé !";
+        resetMsg.className = "success";
+      } catch (err) {
+        resetMsg.textContent = "⛔ Erreur : " + err.message;
+        resetMsg.className = "";
+      }
+    };
   </script>
 </body>
 </html>
