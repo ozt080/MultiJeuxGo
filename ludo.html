@@ -4,160 +4,135 @@
   <meta charset="UTF-8">
   <title>Ludo - MultiJeuxGo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4facfe">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: white;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-    h1 {
-      margin-top: 20px;
-    }
-    #board {
-      display: grid;
-      grid-template-columns: repeat(3, 100px);
-      grid-template-rows: repeat(3, 100px);
-      gap: 2px;
-      margin: 30px auto;
-      width: 310px;
-    }
-    .cell {
-      width: 100px;
-      height: 100px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2em;
-      font-weight: bold;
-    }
-    .yellow { background: #ffeb3b; color: #333; }
-    .green { background: #4caf50; color: white; }
-    .red { background: #f44336; color: white; }
-    .blue { background: #2196f3; color: white; }
-    .center { background: white; color: #00aaff; }
-    #dice {
-      margin: 20px auto;
-      font-size: 2em;
-      background: white;
-      color: #00aaff;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    }
-    #players {
-      margin-top: 20px;
-    }
-    .player {
-      margin: 5px;
-      font-size: 0.95em;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+  </header>
+
   <h1>🎲 Ludo</h1>
-  <div id="players">
-    <div id="playerList">Chargement des joueurs...</div>
+
+  <div class="card">
+    <p id="turnInfo">Tour de : ...</p>
+    <div id="diceBtn" class="btn">Lancer le dé 🎲</div>
+    <button class="btn" id="joinBtn">Rejoindre cette partie</button>
   </div>
 
-  <div id="board">
-    <div class="cell yellow">🟡</div>
-    <div class="cell center">⬆️</div>
-    <div class="cell green">🟢</div>
-    <div class="cell center">⬅️</div>
-    <div class="cell center">⭐</div>
-    <div class="cell center">➡️</div>
-    <div class="cell blue">🔵</div>
-    <div class="cell center">⬇️</div>
-    <div class="cell red">🔴</div>
+  <div class="card">
+    <div id="chatList"></div>
+    <input id="chatInput" placeholder="Votre message...">
+    <button class="btn" id="chatSend">Envoyer</button>
   </div>
-
-  <div id="dice" onclick="rollDice()">🎲</div>
-  <p id="turnInfo">Tour de : ...</p>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
-  authDomain: "multijeugo.firebaseapp.com",
-  projectId: "multijeugo",
-  storageBucket: "multijeugo.firebasestorage.app",
-  messagingSenderId: "181253022362",
-  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
-  measurementId: "G-YKC3SHW17Q"
-};
+      apiKey: "TA_VRAIE_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
     const turnInfo = document.getElementById("turnInfo");
-    const dice = document.getElementById("dice");
-    const playerList = document.getElementById("playerList");
+    const diceBtn = document.getElementById("diceBtn");
+    const joinBtn = document.getElementById("joinBtn");
+    const chatList = document.getElementById("chatList");
+    const chatInput = document.getElementById("chatInput");
+    const chatSend = document.getElementById("chatSend");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const partieId = urlParams.get("id") || "ludo-demo";
+    const ref = doc(db, "parties", partieId);
+    const chatCol = collection(db, "messages", partieId, "items");
 
     let currentUser = null;
-    let players = [];
-    let currentTurn = 0;
 
-    async function chargerJoueurs() {
-      const snapshot = await getDocs(collection(db, "joueurs"));
-      players = snapshot.docs.map(doc => doc.data().prenom);
-      afficherJoueurs();
-      updateTurnDisplay();
-    }
-
-    function afficherJoueurs() {
-      playerList.innerHTML = players.map(p => `👤 ${p}`).join("<br>");
-    }
-
-    function updateTurnDisplay() {
-      turnInfo.textContent = "Tour de : " + (players[currentTurn] || "...");
-    }
-
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
-        alert("⛔ Vous devez être connecté pour jouer.");
         window.location.href = "login.html";
         return;
       }
-      currentUser = user.email;
-      await chargerJoueurs();
+      currentUser = user;
 
-      const turnDoc = await getDoc(doc(db, "ludo", "tour"));
-      if (turnDoc.exists()) {
-        currentTurn = turnDoc.data().index;
-        updateTurnDisplay();
-      } else {
-        await setDoc(doc(db, "ludo", "tour"), { index: 0 });
-      }
+      // Écoute de la partie
+      onSnapshot(ref, async (snap) => {
+        const data = snap.data();
+        if (!data) return;
+        const joueurActifUid = data.joueurs?.[data.tour];
+        const prenomActif = await getPrenom(joueurActifUid);
+        turnInfo.textContent = `Tour de : ${prenomActif} (dé: ${data.etat?.de || 0})`;
+      });
+
+      // Écoute du chat
+      onSnapshot(chatCol, async (snap) => {
+        const items = snap.docs.map(d => d.data()).sort((a,b) => a.timestamp - b.timestamp);
+        chatList.innerHTML = "";
+        for (const m of items) {
+          const nom = await getPrenom(m.auteur);
+          chatList.innerHTML += `<p><b>${nom}:</b> ${m.texte}</p>`;
+        }
+      });
     });
 
-    async function rollDice() {
-      if (currentUser !== players[currentTurn] + "@gmail.com") {
+    diceBtn.addEventListener("click", async () => {
+      const snap = await getDoc(ref);
+      const data = snap.data();
+      if (!data || !currentUser) return;
+
+      if (currentUser.uid !== data.joueurs?.[data.tour]) {
         alert("⛔ Ce n'est pas votre tour !");
         return;
       }
-      const result = Math.floor(Math.random() * 6) + 1;
-      dice.textContent = result;
-      currentTurn = (currentTurn + 1) % players.length;
-      await setDoc(doc(db, "ludo", "tour"), { index: currentTurn });
-      updateTurnDisplay();
-    }
 
-    window.rollDice = rollDice;
+      const de = Math.floor(Math.random() * 6) + 1;
+      await setDoc(ref, {
+        ...data,
+        etat: { ...data.etat, de },
+        tour: (data.tour + 1) % data.joueurs.length
+      });
+    });
+
+    joinBtn.addEventListener("click", async () => {
+      const snap = await getDoc(ref);
+      const data = snap.data();
+      const joueurs = data.joueurs || [];
+      if (!joueurs.includes(currentUser.uid)) {
+        await setDoc(ref, { joueurs: [...joueurs, currentUser.uid] }, { merge: true });
+        alert("✅ Ajouté à la partie !");
+      } else {
+        alert("ℹ️ Tu es déjà dans la partie.");
+      }
+    });
+
+    chatSend.addEventListener("click", async () => {
+      const texte = chatInput.value.trim();
+      if (!texte || !currentUser) return;
+      await addDoc(chatCol, {
+        auteur: currentUser.uid,
+        texte,
+        timestamp: Date.now()
+      });
+      chatInput.value = "";
+    });
+
+    async function getPrenom(uid) {
+      if (!uid) return "...";
+      const s = await getDoc(doc(db, "joueurs", uid));
+      return s.exists() ? s.data().prenom : "Joueur";
+    }
   </script>
 </body>
 </html>
