@@ -12,136 +12,86 @@
       background: linear-gradient(135deg, #4facfe, #00f2fe);
       color: white;
       text-align: center;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 20px;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 60px);
-      grid-template-rows: repeat(6, 60px);
-      gap: 5px;
-      justify-content: center;
-      margin: 20px auto;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 2px;
+      margin: 30px auto;
+      width: 310px;
     }
     .cell {
-      background: white;
-      border-radius: 8px;
+      width: 100px;
+      height: 100px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.2em;
-      color: #00aaff;
+      font-weight: bold;
     }
-    .pawn {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-    }
-    .red { background: #e74c3c; }
-    .green { background: #2ecc71; }
-    .blue { background: #3498db; }
-    .yellow { background: #f1c40f; }
-    button {
-      margin: 10px;
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
-      background-color: white;
-      color: #00aaff;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #e0f7ff;
-    }
-    #chatBox {
-      margin-top: 30px;
+    .yellow { background: #ffeb3b; color: #333; }
+    .green { background: #4caf50; color: white; }
+    .red { background: #f44336; color: white; }
+    .blue { background: #2196f3; color: white; }
+    .center { background: white; color: #00aaff; }
+    #dice {
+      margin: 20px auto;
+      font-size: 2em;
       background: white;
       color: #00aaff;
-      padding: 15px;
-      border-radius: 8px;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-    #messages {
-      height: 150px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      padding: 10px;
-      background: #f9f9f9;
-      color: black;
+    #players {
+      margin-top: 20px;
     }
-    #messageInput {
-      width: 70%;
-      padding: 8px;
+    .player {
+      margin: 5px;
+      font-size: 0.95em;
     }
   </style>
 </head>
 <body>
   <h1>🎲 Ludo</h1>
-  <p id="turn">Tour du joueur : Rouge</p>
-  <button onclick="rollDice()">🎲 Lancer le dé</button>
-  <p id="diceResult"></p>
-  <div id="board"></div>
-  <button onclick="window.location.href='index.html'">🏠 Accueil</button>
-
-  <div id="chatBox">
-    <h3>💬 Messagerie</h3>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Écrire un message...">
-    <button onclick="sendMessage()">Envoyer</button>
+  <div id="players">
+    <div class="player">🟨 zeinabhzz</div>
+    <div class="player">🟩 Kafrinnette</div>
+    <div class="player">🟥 berkanozt9</div>
+    <div class="player">🟦 Agoss654</div>
   </div>
 
-  <script>
-    const board = document.getElementById("board");
-    const diceResult = document.getElementById("diceResult");
-    const turnText = document.getElementById("turn");
-    const players = ["red", "green", "blue", "yellow"];
-    let currentPlayer = 0;
-    let pawns = { red: 0, green: 0, blue: 0, yellow: 0 };
+  <div id="board">
+    <div class="cell yellow">🟡</div>
+    <div class="cell center">⬆️</div>
+    <div class="cell green">🟢</div>
+    <div class="cell center">⬅️</div>
+    <div class="cell center">⭐</div>
+    <div class="cell center">➡️</div>
+    <div class="cell blue">🔵</div>
+    <div class="cell center">⬇️</div>
+    <div class="cell red">🔴</div>
+  </div>
 
-    function createBoard() {
-      board.innerHTML = "";
-      for (let i = 0; i < 36; i++) {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        board.appendChild(cell);
-      }
-      updateBoard();
-    }
-
-    function updateBoard() {
-      const cells = board.querySelectorAll(".cell");
-      cells.forEach(c => c.innerHTML = "");
-      for (let color of players) {
-        const pos = pawns[color];
-        if (pos >= 0 && pos < cells.length) {
-          const pawn = document.createElement("div");
-          pawn.className = `pawn ${color}`;
-          cells[pos].appendChild(pawn);
-        }
-      }
-    }
-
-    function rollDice() {
-      const roll = Math.floor(Math.random() * 6) + 1;
-      diceResult.textContent = `🎲 Résultat : ${roll}`;
-      const color = players[currentPlayer];
-      pawns[color] = Math.min(pawns[color] + roll, 35);
-      updateBoard();
-      if (pawns[color] === 35) {
-        alert(`🏆 Joueur ${color} a gagné !`);
-      }
-      currentPlayer = (currentPlayer + 1) % players.length;
-      turnText.textContent = `Tour du joueur : ${players[currentPlayer]}`;
-    }
-
-    createBoard();
-  </script>
+  <div id="dice" onclick="rollDice()">🎲</div>
+  <p id="turnInfo">Tour de : zeinabhzz</p>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, addDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
   apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
@@ -157,45 +107,46 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const messagesDiv = document.getElementById("messages");
-    const input = document.getElementById("messageInput");
+    const turnInfo = document.getElementById("turnInfo");
+    const dice = document.getElementById("dice");
 
-    onAuthStateChanged(auth, (user) => {
+    let currentUser = null;
+    let players = ["zeinabhzz", "Kafrinnette", "berkanozt9", "Agoss654"];
+    let currentTurn = 0;
+
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         alert("⛔ Vous devez être connecté pour jouer.");
         window.location.href = "login.html";
         return;
       }
-
-      const q = query(collection(db, "messages"), orderBy("createdAt"));
-      onSnapshot(q, (snapshot) => {
-        messagesDiv.innerHTML = "";
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          messagesDiv.innerHTML += `<p><strong>${data.user}:</strong> ${data.text}</p>`;
-        });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
+      currentUser = user.email;
+      const turnDoc = await getDoc(doc(db, "ludo", "tour"));
+      if (turnDoc.exists()) {
+        currentTurn = turnDoc.data().index;
+        updateTurnDisplay();
+      } else {
+        await setDoc(doc(db, "ludo", "tour"), { index: 0 });
+      }
     });
 
-    async function sendMessage() {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("⛔ Vous devez être connecté pour envoyer un message.");
+    async function rollDice() {
+      if (currentUser !== players[currentTurn] + "@gmail.com") {
+        alert("⛔ Ce n'est pas votre tour !");
         return;
       }
-      const text = input.value.trim();
-      if (text === "") return;
-
-      await addDoc(collection(db, "messages"), {
-        text: text,
-        user: user.email,
-        createdAt: new Date()
-      });
-      input.value = "";
+      const result = Math.floor(Math.random() * 6) + 1;
+      dice.textContent = result;
+      currentTurn = (currentTurn + 1) % players.length;
+      await setDoc(doc(db, "ludo", "tour"), { index: currentTurn });
+      updateTurnDisplay();
     }
 
-    window.sendMessage = sendMessage;
+    function updateTurnDisplay() {
+      turnInfo.textContent = "Tour de : " + players[currentTurn];
+    }
+
+    window.rollDice = rollDice;
   </script>
 </body>
 </html>
