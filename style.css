@@ -1,67 +1,98 @@
-/* Style général */
+:root {
+  --primary: #00aaff;
+  --bg1: #4facfe;
+  --bg2: #00f2fe;
+  --cardBg: #ffffff;
+  --textDark: #0b1b2b;
+  --textLight: #ffffff;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+  --font: 'Poppins', sans-serif;
+}
+
 body {
+  font-family: var(--font);
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+  color: var(--textLight);
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
-  color: white;
+  padding: 20px;
   text-align: center;
 }
 
-/* En-tête */
-header {
-  padding: 30px 0;
+h1, h2, h3 {
+  margin: 16px 0;
 }
 
-h1 {
-  font-size: 3em;
-  margin-bottom: 10px;
+.card {
+  background: var(--cardBg);
+  color: var(--textDark);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-width: 480px;
+  margin: 16px auto;
+  box-shadow: var(--shadow);
+  text-align: left;
 }
 
-p {
-  font-size: 1.2em;
-  margin-top: 0;
-}
-
-/* Boutons de jeux */
-.game-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin: 40px 0;
-}
-
-button {
-  padding: 15px 30px;
-  font-size: 1.2em;
+.btn {
+  background: var(--primary);
+  color: white;
   border: none;
   border-radius: 10px;
-  background-color: #ffffff;
-  color: #00aaff;
+  padding: 10px 14px;
+  font-size: 1em;
   cursor: pointer;
-  transition: transform 0.2s, background-color 0.3s;
+  margin-top: 10px;
 }
 
-button:hover {
-  transform: scale(1.05);
-  background-color: #e0f7ff;
+.btn:hover {
+  filter: brightness(0.95);
 }
 
-/* Pied de page */
-footer {
-  margin-top: 50px;
-  font-size: 0.9em;
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1em;
 }
 
-@media screen and (max-width: 600px) {
-  h1 {
-    font-size: 1.5em;
-  }
-  .grid {
-    grid-template-columns: repeat(3, 80px);
-    grid-template-rows: repeat(3, 80px);
-  }
-  button {
-    font-size: 0.9em;
-    padding: 8px 15px;
-  }
+header.tabs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+header.tabs a {
+  background: var(--cardBg);
+  color: var(--textDark);
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+header.tabs a:hover {
+  background: #f0f0f0;
+}
+
+#chatList p {
+  margin: 6px 0;
+  font-size: 0.95em;
+}
+
+.avatar {
+  font-size: 1.5em;
+  margin-right: 8px;
+}
+
+.player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
 }
