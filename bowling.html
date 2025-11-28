@@ -3,80 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <title>Bowling - MultiJeuxGo</title>
-  <a href="/MultiJeuxGo/bowling.html">Bowling</a>
-  <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4facfe">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    canvas {
+      background: #222;
+      border: 5px solid #fff;
+      border-radius: 12px;
+      display: block;
+      margin: 20px auto;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background-color: white;
+      color: #00aaff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e0f7ff;
+    }
+    #chatBox {
+      margin-top: 30px;
+      background: white;
+      color: #00aaff;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #messages {
+      height: 150px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: #f9f9f9;
+      color: black;
+    }
+    #messageInput {
+      width: 70%;
+      padding: 8px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Bowling 🎳</h1>
-  <button onclick="roll()">Lancer</button>
-  <p id="pins"></p>
+  <h1>🎳 Bowling</h1>
+  <p id="score">Score : 0</p>
+  <canvas id="lane" width="600" height="300"></canvas>
+  <button onclick="window.location.href='index.html'">🏠 Accueil</button>
+
+  <div id="chatBox">
+    <h3>💬 Messagerie</h3>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Écrire un message...">
+    <button onclick="sendMessage()">Envoyer</button>
+  </div>
 
   <script>
-    function roll() {
-      const score = Math.floor(Math.random() * 11);
-      document.getElementById("pins").textContent = `Tu as fait tomber ${score} quilles !`;
+    const canvas = document.getElementById("lane");
+    const ctx = canvas.getContext("2d");
+    const scoreText = document.getElementById("score");
+    let score = 0;
+
+    let ball = {x: 300, y: 280, radius: 12, color: "white"};
+    let pins = [];
+    for (let i = 0; i < 10; i++) {
+      pins.push({x: 250 + (i%5)*30, y: 50 + Math.floor(i/5)*40, hit: false});
     }
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // boule
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+      ctx.fillStyle = ball.color;
+      ctx.fill();
+      ctx.stroke();
+
+      // quilles
+      pins.forEach(pin => {
+        if (!pin.hit) {
+          ctx.fillStyle = "white";
+          ctx.fillRect(pin.x, pin.y, 10, 30);
+        }
+      });
+    }
+
+    function rollBall() {
+      const interval = setInterval(() => {
+        ball.y -= 5;
+        pins.forEach(pin => {
+          if (!pin.hit && Math.abs(ball.x - pin.x) < 15 && Math.abs(ball.y - pin.y) < 30) {
+            pin.hit = true;
+            score++;
+            scoreText.textContent = `Score : ${score}`;
+          }
+        });
+        draw();
+        if (ball.y <= 20) {
+          clearInterval(interval);
+          setTimeout(resetBall, 1000);
+        }
+      }, 50);
+    }
+
+    function resetBall() {
+      ball.y = 280;
+      ball.x = 300;
+      draw();
+    }
+
+    canvas.addEventListener("click", rollBall);
+    draw();
   </script>
-  <!-- Script Firebase pour bloquer l'accès si non connecté -->
+
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-  import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-  import { getFirestore, addDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, addDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "TA_VRAIE_CLE_API",
-    authDomain: "multi-jeuxgo.firebaseapp.com",
-    projectId: "multi-jeuxgo",
-    storageBucket: "multi-jeuxgo.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
-  };
+    const firebaseConfig = {
+      apiKey: "TA_VRAIE_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  const messagesDiv = document.getElementById("messages");
-  const input = document.getElementById("messageInput");
+    const messagesDiv = document.getElementById("messages");
+    const input = document.getElementById("messageInput");
 
-  async function sendMessage() {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("⛔ Vous devez être connecté pour envoyer un message.");
-      return;
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("⛔ Vous devez être connecté pour jouer.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const q = query(collection(db, "messages"), orderBy("createdAt"));
+      onSnapshot(q, (snapshot) => {
+        messagesDiv.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          messagesDiv.innerHTML += `<p><strong>${data.user}:</strong> ${data.text}</p>`;
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    });
+
+    async function sendMessage() {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("⛔ Vous devez être connecté pour envoyer un message.");
+        return;
+      }
+      const text = input.value.trim();
+      if (text === "") return;
+
+      await addDoc(collection(db, "messages"), {
+        text: text,
+        user: user.email,
+        createdAt: new Date()
+      });
+      input.value = "";
     }
-    const text = input.value.trim();
-    if (text === "") return;
 
-    await addDoc(collection(db, "messages"), {
-      text: text,
-      user: user.email,
-      createdAt: new Date()
-    });
-    input.value = "";
-  }
-
-  // Affichage en direct des messages
-  const q = query(collection(db, "messages"), orderBy("createdAt"));
-  onSnapshot(q, (snapshot) => {
-    messagesDiv.innerHTML = "";
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      messagesDiv.innerHTML += `<p><strong>${data.user}:</strong> ${data.text}</p>`;
-    });
-    messagesDiv.scrollTop = messagesDiv.scrollHeight; // auto-scroll
-  });
-</script>
-
-  <div id="chatBox" style="margin-top:20px; background:white; color:#00aaff; padding:15px; border-radius:8px; max-width:400px; margin:auto;">
-  <h3>💬 Messagerie</h3>
-  <div id="messages" style="height:150px; overflow-y:auto; border:1px solid #ccc; padding:10px; background:#f9f9f9; color:black;"></div>
-  <input type="text" id="messageInput" placeholder="Écrire un message..." style="width:70%; padding:8px;">
-  <button onclick="sendMessage()" style="padding:8px 12px; background:#00aaff; color:white; border:none; border-radius:6px;">Envoyer</button>
-</div>
-
+    window.sendMessage = sendMessage;
+  </script>
 </body>
 </html>

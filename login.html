@@ -1,93 +1,59 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Connexion - MultiJeuxGo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4facfe">
   <style>
-    body {
-      margin: 0;
-      font-family: Poppins, sans-serif;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: #fff;
-      text-align: center;
-      padding: 20px;
-    }
-    form {
-      background: #fff;
-      color: #00aaff;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 300px;
-      margin: 30px auto;
-      box-shadow: 0 0 10px rgba(0, 0, 0, .2);
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-    }
-    button {
-      background: #00aaff;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0088cc;
-    }
-    #error {
-      color: red;
-      margin-top: 10px;
-    }
+    body { font-family: Poppins, sans-serif; background: linear-gradient(135deg,#4facfe,#00f2fe); color:white; text-align:center; padding:20px; }
+    form { background:white; color:#00aaff; padding:20px; border-radius:12px; max-width:300px; margin:30px auto; }
+    input,button { width:100%; padding:10px; margin:10px 0; border:none; border-radius:8px; font-size:1em; }
+    button { background:#00aaff; color:white; cursor:pointer; }
+    button:hover { background:#0088cc; }
+    #error { color:red; }
   </style>
 </head>
 <body>
-  <h1>🔐 Connexion à MultiJeuxGo</h1>
+  <h1>🔐 Connexion</h1>
   <form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Mot de passe" required />
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Mot de passe" required>
     <button type="submit">Se connecter</button>
-    <p style="margin-top:10px;">
-      <a href="register.html" style="color:#00aaff; text-decoration:underline; font-weight:bold;">➕ Créer un compte</a>
-    </p>
+    <p><a href="register.html" style="color:#00aaff;">Créer un compte</a></p>
     <p id="error"></p>
   </form>
 
   <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-    // 🔑 Remplace par tes vraies clés Supabase
-    const supabaseUrl = "https://xyz.supabase.co"; // ← ton URL Supabase
-    const supabaseKey = "eyJhbGciOi..."; // ← ta clé publique
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const firebaseConfig = {
+      apiKey: "TA_VRAIE_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
     const form = document.getElementById("loginForm");
     const error = document.getElementById("error");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = document.getElementById("email").value.trim();
+      const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (authError) {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "index.html";
+      } catch (err) {
         error.textContent = "⛔ Email ou mot de passe incorrect.";
-        return;
       }
-
-      // ✅ Mettre à jour la table users
-      await supabase.from("users").upsert({
-        email: email,
-        name: email.split("@")[0],
-        status: "online",
-        last_seen: new Date()
-      });
-
-      window.location.href = "index.html";
     });
   </script>
 </body>

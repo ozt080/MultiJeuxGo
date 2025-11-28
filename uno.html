@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Quiz - MultiJeuxGo</title>
+  <title>UNO - MultiJeuxGo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4facfe">
@@ -14,25 +14,34 @@
       text-align: center;
       padding: 20px;
     }
-    .question-box {
-      background: white;
-      color: #00aaff;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: 30px auto;
+    .card {
+      display: inline-block;
+      width: 80px;
+      height: 120px;
+      margin: 10px;
+      border-radius: 10px;
+      font-size: 1.5em;
+      font-weight: bold;
+      line-height: 120px;
+      color: white;
+      cursor: pointer;
     }
+    .red { background: #e74c3c; }
+    .green { background: #2ecc71; }
+    .blue { background: #3498db; }
+    .yellow { background: #f1c40f; color: black; }
+    #gameArea { margin-top: 30px; }
     button {
       margin: 10px;
       padding: 10px 20px;
       border-radius: 8px;
       border: none;
-      background-color: #00aaff;
-      color: white;
+      background-color: white;
+      color: #00aaff;
       cursor: pointer;
     }
     button:hover {
-      background-color: #0088cc;
+      background-color: #e0f7ff;
     }
     #chatBox {
       margin-top: 30px;
@@ -59,8 +68,11 @@
   </style>
 </head>
 <body>
-  <h1>🧠 Quiz</h1>
-  <div class="question-box" id="quizBox">Chargement...</div>
+  <h1>🃏 UNO</h1>
+  <div id="gameArea">
+    <p id="turn">Tour du joueur : Rouge</p>
+    <div id="cards"></div>
+  </div>
   <button onclick="window.location.href='index.html'">🏠 Accueil</button>
 
   <div id="chatBox">
@@ -71,30 +83,33 @@
   </div>
 
   <script>
-    const questions = [
-      { q: "Quelle est la capitale de la France ?", options: ["Paris", "Lyon", "Marseille"], answer: "Paris" },
-      { q: "Combien font 2 + 2 ?", options: ["3", "4", "5"], answer: "4" },
-      { q: "Quelle est la couleur du ciel ?", options: ["Bleu", "Vert", "Rouge"], answer: "Bleu" }
-    ];
-    let index = 0, score = 0;
+    const colors = ["red", "green", "blue", "yellow"];
+    const cardsDiv = document.getElementById("cards");
+    const turnText = document.getElementById("turn");
+    let currentColor = "red";
 
-    function showQuestion() {
-      const q = questions[index];
-      let html = `<p>${q.q}</p>`;
-      q.options.forEach(opt => {
-        html += `<button onclick="checkAnswer('${opt}')">${opt}</button><br>`;
+    function renderCards() {
+      cardsDiv.innerHTML = "";
+      colors.forEach(color => {
+        const card = document.createElement("div");
+        card.className = `card ${color}`;
+        card.textContent = color.charAt(0).toUpperCase();
+        card.onclick = () => playCard(color);
+        cardsDiv.appendChild(card);
       });
-      document.getElementById("quizBox").innerHTML = html;
     }
 
-    function checkAnswer(opt) {
-      if (opt === questions[index].answer) score++;
-      index++;
-      if (index < questions.length) showQuestion();
-      else document.getElementById("quizBox").innerHTML = `✅ Quiz terminé ! Score : ${score}/${questions.length}`;
+    function playCard(color) {
+      if (color === currentColor) {
+        alert(`✅ Carte ${color} jouée !`);
+        currentColor = colors[Math.floor(Math.random() * colors.length)];
+        turnText.textContent = `Tour du joueur : ${currentColor.charAt(0).toUpperCase() + currentColor.slice(1)}`;
+      } else {
+        alert("⛔ Mauvaise couleur !");
+      }
     }
 
-    showQuestion();
+    renderCards();
   </script>
 
   <script type="module">

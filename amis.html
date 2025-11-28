@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Amis - MultiJeuxGo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4facfe">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -19,180 +21,94 @@
       border: none;
       font-size: 1em;
     }
-    #result, #friendsList, #invitations {
-      margin-top: 20px;
+    button {
+      background: #00aaff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0088cc;
+    }
+    #amisList {
       background: white;
       color: #00aaff;
       padding: 15px;
       border-radius: 8px;
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: left;
     }
-    button.action {
-      background-color: #00aaff;
-      color: white;
-      margin: 5px;
-      cursor: pointer;
+    .ami {
+      padding: 5px;
+      border-bottom: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>👥 Mes Amis</h1>
-
-  <input type="text" id="search" placeholder="Email de l'ami">
-  <button onclick="inviterAmi()">Inviter</button>
-
-  <div id="result"></div>
-
-  <h2>Liste d'amis</h2>
-  <div id="friendsList">Chargement...</div>
-
-  <h2>Invitations reçues</h2>
-  <div id="invitations">Chargement...</div>
-
-  <!-- 🔔 Son de notification -->
-  <audio id="notifSound" src="https://assets.mixkit.co/sfx/download/mixkit-bell-notification-933.mp3" preload="auto"></audio>
+  <h1>👥 Gestion des Amis</h1>
+  <input type="text" id="amiEmail" placeholder="Email de l'ami">
+  <button onclick="addFriend()">Ajouter</button>
+  <div id="amisList">Chargement...</div>
+  <button onclick="window.location.href='index.html'">🏠 Accueil</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, updateDoc, deleteDoc, getDocs, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, addDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
-      authDomain: "multijeugo.firebaseapp.com",
-      projectId: "multijeugo",
-      storageBucket: "multijeugo.appspot.com",
-      messagingSenderId: "181253022362",
-      appId: "1:181253022362:web:3eca9851efdb7541a5f523",
-      measurementId: "G-YKC3SHW17Q"
+      apiKey: "TA_VRAIE_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ✅ Envoyer une invitation
-    async function inviterAmi() {
-      const email = document.getElementById("search").value.trim();
-      const user = auth.currentUser;
+    const amisList = document.getElementById("amisList");
+    const amiEmailInput = document.getElementById("amiEmail");
 
-      if (!user) {
-        alert("⛔ Vous devez être connecté pour inviter un ami.");
-        return;
-      }
+    let currentUserEmail = "";
 
-      if (email === "") {
-        document.getElementById("result").textContent = "⛔ Entrez un email.";
-        return;
-      }
-
-      try {
-        await setDoc(doc(db, "amis", `${user.uid}_${email}`), {
-          from: user.email,
-          to: email,
-          status: "invitation envoyée"
-        });
-        document.getElementById("result").textContent = `✅ Invitation envoyée à ${email}`;
-      } catch (err) {
-        document.getElementById("result").textContent = "Erreur : " + err.message;
-      }
-    }
-
-    // ✅ Charger la liste d'amis acceptés
-    async function chargerAmis() {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const querySnapshot = await getDocs(collection(db, "amis"));
-      let amis = [];
-
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (
-          (data.from === user.email || data.to === user.email) &&
-          data.status === "accepté"
-        ) {
-          const amiEmail = data.from === user.email ? data.to : data.from;
-          amis.push(amiEmail);
-        }
-      });
-
-      onSnapshot(collection(db, "users"), (snapshot) => {
-        let html = "";
-        snapshot.forEach((docSnap) => {
-          const u = docSnap.data();
-          if (amis.includes(u.email)) {
-            html += `<p>${dotFor(u.status)} ${u.name || u.email}</p>`;
-          }
-        });
-        document.getElementById("friendsList").innerHTML = html || "Aucun ami pour l'instant.";
-      });
-    }
-
-    // ✅ Charger les invitations reçues en direct
-    let invitationsConnues = [];
-    function chargerInvitationsEnDirect() {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      onSnapshot(collection(db, "amis"), (snapshot) => {
-        let html = "";
-        const nouvelles = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          const docId = docSnap.id;
-          if (data.to === user.email && data.status === "invitation envoyée") {
-            html += `<p>${data.from} souhaite vous ajouter.<br>
-              <button class="action" onclick="accepterInvitation('${docId}')">✅ Accepter</button>
-              <button class="action" onclick="refuserInvitation('${docId}')">❌ Refuser</button>
-            </p>`;
-            if (!invitationsConnues.includes(docId)) nouvelles.push(docId);
-          }
-        });
-        document.getElementById("invitations").innerHTML = html || "Aucune invitation reçue.";
-        if (nouvelles.length > 0) {
-          document.getElementById("notifSound").play();
-          invitationsConnues.push(...nouvelles);
-        }
-      });
-    }
-
-    // ✅ Accepter une invitation
-    async function accepterInvitation(docId) {
-      await updateDoc(doc(db, "amis", docId), { status: "accepté" });
-      chargerAmis();
-    }
-
-    // ✅ Refuser une invitation
-    async function refuserInvitation(docId) {
-      await deleteDoc(doc(db, "amis", docId));
-    }
-
-    // ✅ Statut en direct (● vert/rouge/bleu)
-    function dotFor(status) {
-      const map = {
-        online: "#2ecc71",
-        offline: "#e74c3c",
-        playing: "#3498db"
-      };
-      const color = map[status] || "#bdc3c7";
-      return `<span style="color:${color}; font-size:16px;">●</span>`;
-    }
-
-    // ✅ Rendre les fonctions accessibles
-    window.inviterAmi = inviterAmi;
-    window.accepterInvitation = accepterInvitation;
-    window.refuserInvitation = refuserInvitation;
-
-    // ✅ Initialisation
     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        chargerAmis();
-        chargerInvitationsEnDirect();
-      } else {
-        document.getElementById("friendsList").textContent = "⛔ Connectez-vous pour voir vos amis.";
-        document.getElementById("invitations").textContent = "⛔ Connectez-vous pour voir vos invitations.";
+      if (!user) {
+        alert("⛔ Vous devez être connecté pour gérer vos amis.");
+        window.location.href = "login.html";
+        return;
       }
+      currentUserEmail = user.email;
+      chargerAmis();
     });
+
+    async function addFriend() {
+      const amiEmail = amiEmailInput.value.trim();
+      if (!amiEmail) return;
+      await addDoc(collection(db, "amis"), {
+        from: currentUserEmail,
+        to: amiEmail,
+        status: "en attente",
+        createdAt: new Date()
+      });
+      amiEmailInput.value = "";
+    }
+
+    function chargerAmis() {
+      const q = query(collection(db, "amis"), where("from", "==", currentUserEmail));
+      onSnapshot(q, (snapshot) => {
+        amisList.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          amisList.innerHTML += `<div class="ami">➡️ ${data.to} (${data.status})</div>`;
+        });
+        if (amisList.innerHTML === "") amisList.textContent = "Aucun ami ajouté.";
+      });
+    }
+
+    window.addFriend = addFriend;
   </script>
 </body>
 </html>
