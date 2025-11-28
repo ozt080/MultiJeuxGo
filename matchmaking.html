@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Matchmaking - MultiJeuxGo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+    <a href="profil.html">Mon Profil</a>
+  </header>
+
+  <h1>🔗 Matchmaking</h1>
+  <p>Choisis un mode de jeu pour créer ou rejoindre une partie.</p>
+
+  <div class="card">
+    <h3>🔥 Quick Play</h3>
+    <p>Live, 2 joueurs, cases sans risque, sortie au 1er tour.</p>
+    <button class="btn" id="quickBtn">Créer une partie rapide</button>
+  </div>
+
+  <div class="card">
+    <h3>🏆 Ranked</h3>
+    <p>Live, 2 joueurs, cases sûres, sortie au 1er tour, classement Elo.</p>
+    <button class="btn" id="rankedBtn">Créer une partie classée</button>
+  </div>
+
+  <div class="card">
+    <h3>👨‍👩‍👧‍👦 4 Joueurs</h3>
+    <p>Live, 4 joueurs, cases sans risque, pas de sortie au 1er tour.</p>
+    <button class="btn" id="fourBtn">Créer une partie à 4</button>
+  </div>
+
+  <div class="card">
+    <h3>🤝 2v2</h3>
+    <p>Live, 4 joueurs en équipes, cases sans risque, pas de sortie au 1er tour.</p>
+    <button class="btn" id="twoVtwoBtn">Créer une partie 2v2</button>
+  </div>
+
+  <div class="card">
+    <h3>Rejoindre une partie</h3>
+    <input id="lobbyId" placeholder="Code du lobby">
+    <button class="btn" id="joinLobbyBtn">Rejoindre</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
+  authDomain: "multijeugo.firebaseapp.com",
+  projectId: "multijeugo",
+  storageBucket: "multijeugo.firebasestorage.app",
+  messagingSenderId: "181253022362",
+  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
+  measurementId: "G-YKC3SHW17Q"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    async function creerLobby(mode, joueursMax, options = {}) {
+      const user = auth.currentUser;
+      if (!user) { alert("Connecte-toi d'abord !"); return; }
+      const lobbyId = mode + "-" + Date.now();
+      await setDoc(doc(db, "lobby", lobbyId), {
+        hote: user.uid,
+        jeu: "ludo",
+        status: "waiting",
+        joueurs: [user.uid],
+        options: { mode, joueursMax, ...options },
+        createdAt: Date.now()
+      });
+      window.location.href = `ludo.html?id=${lobbyId}`;
+    }
+
+    document.getElementById("quickBtn").addEventListener("click", () => {
+      creerLobby("Quick", 2, { sortiePremierTour: true });
+    });
+
+    document.getElementById("rankedBtn").addEventListener("click", () => {
+      creerLobby("Ranked", 2, { classement: true });
+    });
+
+    document.getElementById("fourBtn").addEventListener("click", () => {
+      creerLobby("FourPlayers", 4, { sortiePremierTour: false });
+    });
+
+    document.getElementById("twoVtwoBtn").addEventListener("click", () => {
+      creerLobby("2v2", 4, { equipes: true, sortiePremierTour: false });
+    });
+
+    document.getElementById("joinLobbyBtn").addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user) { alert("Connecte-toi d'abord !"); return; }
+      const lobbyId = document.getElementById("lobbyId").value.trim();
+      if (!lobbyId) return;
+      const ref = doc(db, "lobby", lobbyId);
+      const snap = await getDoc(ref);
+      const data = snap.data();
+      if (!data) { alert("Lobby introuvable"); return; }
+      if (!data.joueurs.includes(user.uid) && data.joueurs.length < data.options.joueursMax) {
+        await setDoc(ref, { joueurs: [...data.joueurs, user.uid] }, { merge: true });
+      }
+      window.location.href = `ludo.html?id=${lobbyId}`;
+    });
+  </script>
+</body>
+</html>
