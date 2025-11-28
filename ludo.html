@@ -67,10 +67,7 @@
 <body>
   <h1>🎲 Ludo</h1>
   <div id="players">
-    <div class="player">🟨 zeinabhzz</div>
-    <div class="player">🟩 Kafrinnette</div>
-    <div class="player">🟥 berkanozt9</div>
-    <div class="player">🟦 Agoss654</div>
+    <div id="playerList">Chargement des joueurs...</div>
   </div>
 
   <div id="board">
@@ -86,12 +83,12 @@
   </div>
 
   <div id="dice" onclick="rollDice()">🎲</div>
-  <p id="turnInfo">Tour de : zeinabhzz</p>
+  <p id="turnInfo">Tour de : ...</p>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
   apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
@@ -109,10 +106,26 @@
 
     const turnInfo = document.getElementById("turnInfo");
     const dice = document.getElementById("dice");
+    const playerList = document.getElementById("playerList");
 
     let currentUser = null;
-    let players = ["zeinabhzz", "Kafrinnette", "berkanozt9", "Agoss654"];
+    let players = [];
     let currentTurn = 0;
+
+    async function chargerJoueurs() {
+      const snapshot = await getDocs(collection(db, "joueurs"));
+      players = snapshot.docs.map(doc => doc.data().prenom);
+      afficherJoueurs();
+      updateTurnDisplay();
+    }
+
+    function afficherJoueurs() {
+      playerList.innerHTML = players.map(p => `👤 ${p}`).join("<br>");
+    }
+
+    function updateTurnDisplay() {
+      turnInfo.textContent = "Tour de : " + (players[currentTurn] || "...");
+    }
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -121,6 +134,8 @@
         return;
       }
       currentUser = user.email;
+      await chargerJoueurs();
+
       const turnDoc = await getDoc(doc(db, "ludo", "tour"));
       if (turnDoc.exists()) {
         currentTurn = turnDoc.data().index;
@@ -140,10 +155,6 @@
       currentTurn = (currentTurn + 1) % players.length;
       await setDoc(doc(db, "ludo", "tour"), { index: currentTurn });
       updateTurnDisplay();
-    }
-
-    function updateTurnDisplay() {
-      turnInfo.textContent = "Tour de : " + players[currentTurn];
     }
 
     window.rollDice = rollDice;
