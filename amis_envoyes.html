@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Demandes envoyées - MultiJeuxGo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+    <a href="chat.html">Chat</a>
+    <a href="profil.html">Mon Profil</a>
+    <a href="amis_recu.html">Demandes reçues</a>
+    <a href="amis_envoyes.html">Demandes envoyées</a>
+  </header>
+
+  <h1>📤 Demandes d’amis envoyées</h1>
+  <p>Voici les demandes que tu as envoyées. Tu peux les annuler si nécessaire.</p>
+
+  <div class="card">
+    <h3>Mes demandes envoyées</h3>
+    <div id="demandesEnvoyees">Chargement...</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import {
+      getFirestore, collection, onSnapshot, doc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
+  authDomain: "multijeugo.firebaseapp.com",
+  projectId: "multijeugo",
+  storageBucket: "multijeugo.firebasestorage.app",
+  messagingSenderId: "181253022362",
+  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
+  measurementId: "G-YKC3SHW17Q"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const demandesEnvoyees = document.getElementById("demandesEnvoyees");
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      currentUser = user;
+
+      // Les demandes envoyées sont stockées dans amisDemandes/{uidReceveur}/list/{uidDemandeur}
+      // On doit donc écouter toutes les collections où currentUser est demandeur
+      // Pour simplifier, on peut créer une collection miroir "amisEnvoyes/{uid}/list/{uidReceveur}"
+      const col = collection(db, "amisEnvoyes", user.uid, "list");
+      onSnapshot(col, (snap) => {
+        demandesEnvoyees.innerHTML = "";
+        if (snap.empty) {
+          demandesEnvoyees.innerHTML = "<p>Aucune demande envoyée.</p>";
+          return;
+        }
+
+        snap.docs.forEach(d => {
+          const uidReceveur = d.id;
+          const data = d.data();
+          demandesEnvoyees.innerHTML += `
+            <div class="player">
+              <span class="avatar">${data.avatar}</span>
+              <span class="name">${data.prenom}</span>
+              <button class="btn" onclick="annuler('${uidReceveur}')">❌ Annuler</button>
+            </div>`;
+        });
+      });
+    });
+
+    window.annuler = async function(uidReceveur) {
+      if (!currentUser) return;
+      // Supprimer la demande côté receveur
+      await deleteDoc(doc(db, "amisDemandes", uidReceveur, "list", currentUser.uid));
+      // Supprimer la demande côté envoyeur (miroir)
+      await deleteDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", uidReceveur));
+      alert("❌ Demande annulée.");
+    };
+  </script>
+</body>
+</html>
