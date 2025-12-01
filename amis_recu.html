@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Demandes d’amis - MultiJeuxGo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+    <a href="chat.html">Chat</a>
+    <a href="profil.html">Mon Profil</a>
+    <a href="amis_recu.html">Demandes reçues</a>
+  </header>
+
+  <h1>📩 Demandes d’amis reçues</h1>
+  <p>Tu peux accepter ou refuser les demandes d’amis reçues.</p>
+
+  <div class="card">
+    <h3>Demandes en attente</h3>
+    <div id="demandesList">Chargement...</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import {
+      getFirestore, collection, onSnapshot, doc,
+      setDoc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
+  authDomain: "multijeugo.firebaseapp.com",
+  projectId: "multijeugo",
+  storageBucket: "multijeugo.firebasestorage.app",
+  messagingSenderId: "181253022362",
+  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
+  measurementId: "G-YKC3SHW17Q"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const demandesList = document.getElementById("demandesList");
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      currentUser = user;
+
+      const col = collection(db, "amisDemandes", user.uid, "list");
+      onSnapshot(col, (snap) => {
+        demandesList.innerHTML = "";
+        if (snap.empty) {
+          demandesList.innerHTML = "<p>Aucune demande reçue.</p>";
+          return;
+        }
+
+        snap.docs.forEach(d => {
+          const uid = d.id;
+          const data = d.data();
+          demandesList.innerHTML += `
+            <div class="player">
+              <span class="avatar">${data.avatar}</span>
+              <span class="name">${data.prenom}</span>
+              <button class="btn" onclick="accepter('${uid}')">✅ Accepter</button>
+              <button class="btn" onclick="refuser('${uid}')">❌ Refuser</button>
+            </div>`;
+        });
+      });
+    });
+
+    window.accepter = async function(uidDemandeur) {
+      if (!currentUser) return;
+      await setDoc(doc(db, "amis", currentUser.uid, "list", uidDemandeur), { since: Date.now() });
+      await setDoc(doc(db, "amis", uidDemandeur, "list", currentUser.uid), { since: Date.now() });
+      await deleteDoc(doc(db, "amisDemandes", currentUser.uid, "list", uidDemandeur));
+      alert("✅ Ami accepté !");
+    };
+
+    window.refuser = async function(uidDemandeur) {
+      if (!currentUser) return;
+      await deleteDoc(doc(db, "amisDemandes", currentUser.uid, "list", uidDemandeur));
+      alert("❌ Demande refusée.");
+    };
+  </script>
+</body>
+</html>
