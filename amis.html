@@ -14,6 +14,8 @@
     <a href="amis.html">Mes amis</a>
     <a href="chat.html">Chat</a>
     <a href="profil.html">Mon Profil</a>
+    <a href="amis_recu.html">Demandes reçues</a>
+    <a href="amis_envoyes.html">Demandes envoyées</a>
   </header>
 
   <h1>👥 Mes Amis</h1>
@@ -38,14 +40,13 @@
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
-  authDomain: "multijeugo.firebaseapp.com",
-  projectId: "multijeugo",
-  storageBucket: "multijeugo.firebasestorage.app",
-  messagingSenderId: "181253022362",
-  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
-  measurementId: "G-YKC3SHW17Q"
-};
+      apiKey: "TA_VRAIE_CLE_API",
+      authDomain: "multi-jeuxgo.firebaseapp.com",
+      projectId: "multi-jeuxgo",
+      storageBucket: "multi-jeuxgo.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -57,6 +58,7 @@
 
     let currentUser = null;
 
+    // 🔐 Vérification utilisateur connecté
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "login.html";
@@ -64,10 +66,14 @@
       }
       currentUser = user;
 
+      // 👥 Liste des amis acceptés
       const col = collection(db, "amis", user.uid, "list");
       onSnapshot(col, async (snap) => {
         const items = snap.docs.map(d => d.id);
         amisList.innerHTML = "";
+        if (items.length === 0) {
+          amisList.innerHTML = "<p>Aucun ami pour l’instant.</p>";
+        }
         for (const uid of items) {
           const profil = await getProfil(uid);
           amisList.innerHTML += `
@@ -79,28 +85,50 @@
       });
     });
 
-    addAmiBtn.addEventListener("click", async () => {
-      const email = amiEmailInput.value.trim();
-      if (!email || !currentUser) return;
-      const amiUid = await getUidFromEmail(email);
-      if (!amiUid) {
+    // 📧 Fonction pour envoyer une demande d’ami
+    async function envoyerDemandeAmi(email, currentUser) {
+      const q = query(collection(db, "joueurs"), where("email", "==", email));
+      const snap = await getDocs(q);
+      if (snap.empty) {
         alert("❌ Aucun joueur trouvé avec cet email.");
         return;
       }
-      await setDoc(doc(db, "amis", currentUser.uid, "list", amiUid), {
-        since: Date.now()
-      });
-      alert("✅ Ami ajouté !");
+      const amiUid = snap.docs[0].id;
+
+      // Profil de l’envoyeur
+      const profilEnvoyeur = {
+        email: currentUser.email,
+        prenom: currentUser.displayName || currentUser.email,
+        avatar: "🙂",
+        date: Date.now()
+      };
+
+      // Profil du receveur
+      const dataReceveur = snap.docs[0].data();
+      const profilReceveur = {
+        prenom: dataReceveur.prenom || dataReceveur.email,
+        avatar: dataReceveur.avatar || "🙂",
+        date: Date.now()
+      };
+
+      // 1️⃣ Demande côté receveur
+      await setDoc(doc(db, "amisDemandes", amiUid, "list", currentUser.uid), profilEnvoyeur);
+
+      // 2️⃣ Demande miroir côté envoyeur
+      await setDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", amiUid), profilReceveur);
+
+      alert("✅ Demande envoyée !");
+    }
+
+    // 📤 Bouton Ajouter
+    addAmiBtn.addEventListener("click", async () => {
+      const email = amiEmailInput.value.trim();
+      if (!email || !currentUser) return;
+      await envoyerDemandeAmi(email, currentUser);
       amiEmailInput.value = "";
     });
 
-    async function getUidFromEmail(email) {
-      const q = query(collection(db, "joueurs"), where("email", "==", email));
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return snap.docs[0].id;
-    }
-
+    // 🔎 Récupérer profil joueur
     async function getProfil(uid) {
       const s = await getDoc(doc(db, "joueurs", uid));
       if (!s.exists()) return { prenom: "Joueur", avatar: "🙂" };
@@ -113,4 +141,3 @@
   </script>
 </body>
 </html>
-
