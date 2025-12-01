@@ -70,15 +70,19 @@
     });
 
     loginBtn.addEventListener("click", async () => {
-      loginMsg.textContent = "⏳ Connexion...";
-      try {
-        await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value.trim());
-        loginMsg.textContent = "✅ Connecté !";
+  loginMsg.textContent = "⏳ Connexion...";
+  try {
+    const cred = await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value.trim());
+    loginMsg.textContent = "✅ Connecté ! Redirection...";
+
+    console.log("Connecté avec UID :", cred.user.uid);
+
         setTimeout(() => window.location.href = "index.html", 600);
-      } catch (e) {
-        loginMsg.textContent = "❌ " + e.message;
-      }
-    });
+  } catch (e) {
+    loginMsg.style.color = "#c62828";
+    loginMsg.textContent = "❌ " + (e.message || "Erreur de connexion");
+  }
+});
 
     signupBtn.addEventListener("click", async () => {
       signupMsg.textContent = "⏳ Création...";
