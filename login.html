@@ -1,145 +1,98 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Connexion - MultiJeuxGo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4facfe">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: white;
-      text-align: center;
-      padding: 20px;
-    }
-    form {
-      background: white;
-      color: #00aaff;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 300px;
-      margin: 30px auto;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-    }
-    button {
-      background: #00aaff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0088cc;
-    }
-    a {
-      color: #00aaff;
-      text-decoration: none;
-      font-size: 0.95em;
-    }
-    #error, #resetMsg {
-      color: red;
-      font-size: 0.9em;
-    }
-    #resetMsg.success {
-      color: green;
-    }
-    #resetBox {
-      display: none;
-      margin-top: 20px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🔐 Connexion</h1>
-  <form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Mot de passe" required>
-    <button type="submit">Se connecter</button>
-    <p>
-      <a href="register.html">Créer un compte</a> |
-      <a href="#" onclick="showResetForm()">Mot de passe oublié ?</a>
-    </p>
-    <p id="error"></p>
-  </form>
+  <header class="tabs">
+    <a href="index.html">Jeux</a>
+    <a href="classement.html">Classement</a>
+    <a href="guide.html">Comment jouer</a>
+    <a href="amis.html">Mes amis</a>
+    <a href="chat.html">Chat</a>
+    <a href="profil.html">Mon Profil</a>
+  </header>
 
-  <div id="resetBox">
-    <form>
-      <input type="email" id="resetEmail" placeholder="Votre email">
-      <button type="button" onclick="sendReset()">Réinitialiser le mot de passe</button>
-      <p id="resetMsg"></p>
-    </form>
+  <h1>🔐 Connexion</h1>
+
+  <div class="card">
+    <h3>Se connecter</h3>
+    <input id="loginEmail" type="email" placeholder="Email" />
+    <input id="loginPass" type="password" placeholder="Mot de passe" />
+    <button class="btn" id="loginBtn">Se connecter</button>
+    <p id="loginMsg"></p>
+  </div>
+
+  <div class="card">
+    <h3>Créer un compte</h3>
+    <input id="signupEmail" type="email" placeholder="Email" />
+    <input id="signupPass" type="password" placeholder="Mot de passe (min 6 caractères)" />
+    <input id="signupPrenom" type="text" placeholder="Prénom (optionnel)" />
+    <button class="btn" id="signupBtn">S'inscrire</button>
+    <p id="signupMsg"></p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged,
+      signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
-  authDomain: "multijeugo.firebaseapp.com",
-  projectId: "multijeugo",
-  storageBucket: "multijeugo.firebasestorage.app",
-  messagingSenderId: "181253022362",
-  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
-  measurementId: "G-YKC3SHW17Q"
-};
-
+    const firebaseConfig = { /* ton vrai config ici */ };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const form = document.getElementById("loginForm");
-    const error = document.getElementById("error");
+    const loginEmail = document.getElementById("loginEmail");
+    const loginPass = document.getElementById("loginPass");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginMsg = document.getElementById("loginMsg");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    const signupEmail = document.getElementById("signupEmail");
+    const signupPass = document.getElementById("signupPass");
+    const signupPrenom = document.getElementById("signupPrenom");
+    const signupBtn = document.getElementById("signupBtn");
+    const signupMsg = document.getElementById("signupMsg");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) window.location.href = "index.html";
+    });
+
+    loginBtn.addEventListener("click", async () => {
+      loginMsg.textContent = "⏳ Connexion...";
       try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        const uid = cred.user.uid;
-
-        // Vérifie si le profil existe, sinon crée un profil minimal
-        const ref = doc(db, "joueurs", uid);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-          await setDoc(ref, {
-            email,
-            prenom: email.split("@")[0],
-            avatar: "🙂"
-          });
-        }
-
-        window.location.href = "index.html";
-      } catch (err) {
-        error.textContent = "⛔ Email ou mot de passe incorrect.";
+        await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value.trim());
+        loginMsg.textContent = "✅ Connecté !";
+        setTimeout(() => window.location.href = "index.html", 600);
+      } catch (e) {
+        loginMsg.textContent = "❌ " + e.message;
       }
     });
 
-    window.showResetForm = function () {
-      document.getElementById("resetBox").style.display = "block";
-    };
-
-    window.sendReset = async function () {
-      const email = document.getElementById("resetEmail").value;
-      const resetMsg = document.getElementById("resetMsg");
+    signupBtn.addEventListener("click", async () => {
+      signupMsg.textContent = "⏳ Création...";
       try {
-        await sendPasswordResetEmail(auth, email);
-        resetMsg.textContent = "📩 Email de réinitialisation envoyé !";
-        resetMsg.className = "success";
-      } catch (err) {
-        resetMsg.textContent = "⛔ Erreur : " + err.message;
-        resetMsg.className = "";
+        const cred = await createUserWithEmailAndPassword(auth, signupEmail.value.trim(), signupPass.value.trim());
+        if (signupPrenom.value.trim()) {
+          await updateProfile(cred.user, { displayName: signupPrenom.value.trim() });
+        }
+        await setDoc(doc(db, "joueurs", cred.user.uid), {
+          email: cred.user.email,
+          prenom: signupPrenom.value.trim() || cred.user.email,
+          avatar: "🙂",
+          createdAt: Date.now()
+        });
+        signupMsg.textContent = "✅ Compte créé !";
+        setTimeout(() => window.location.href = "index.html", 600);
+      } catch (e) {
+        signupMsg.textContent = "❌ " + e.message;
       }
-    };
+    });
   </script>
 </body>
 </html>

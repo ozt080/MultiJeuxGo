@@ -41,13 +41,14 @@
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "TA_VRAIE_CLE_API",
-      authDomain: "multi-jeuxgo.firebaseapp.com",
-      projectId: "multi-jeuxgo",
-      storageBucket: "multi-jeuxgo.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
-    };
+  apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
+  authDomain: "multijeugo.firebaseapp.com",
+  projectId: "multijeugo",
+  storageBucket: "multijeugo.firebasestorage.app",
+  messagingSenderId: "181253022362",
+  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
+  measurementId: "G-YKC3SHW17Q"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -55,11 +56,11 @@
 
     const addAmiBtn = document.getElementById("addAmiBtn");
     const amiEmailInput = document.getElementById("amiEmail");
+    const confirmationMessage = document.getElementById("confirmationMessage");
     const amisList = document.getElementById("amisList");
 
     let currentUser = null;
 
-    // 🔐 Vérification utilisateur connecté
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "login.html";
@@ -67,7 +68,6 @@
       }
       currentUser = user;
 
-      // 👥 Liste des amis acceptés
       const col = collection(db, "amis", user.uid, "list");
       onSnapshot(col, async (snap) => {
         const items = snap.docs.map(d => d.id);
@@ -86,60 +86,42 @@
       });
     });
 
-    // 📧 Fonction pour envoyer une demande d’ami
     async function envoyerDemandeAmi(email, currentUser) {
       const q = query(collection(db, "joueurs"), where("email", "==", email));
       const snap = await getDocs(q);
       if (snap.empty) {
-        alert("❌ Aucun joueur trouvé avec cet email.");
+        confirmationMessage.textContent = "❌ Aucun joueur trouvé avec cet email.";
         return;
       }
-      const amiUid = snap.docs[0].id;
 
-      // Profil de l’envoyeur
-      const profilEnvoyeur = {
+      const amiUid = snap.docs[0].id;
+      const data = snap.docs[0].data();
+
+      await setDoc(doc(db, "amisDemandes", amiUid, "list", currentUser.uid), {
         email: currentUser.email,
         prenom: currentUser.displayName || currentUser.email,
         avatar: "🙂",
         date: Date.now()
-      };
+      });
 
-      // Profil du receveur
-      const dataReceveur = snap.docs[0].data();
-      const profilReceveur = {
-        prenom: dataReceveur.prenom || dataReceveur.email,
-        avatar: dataReceveur.avatar || "🙂",
+      await setDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", amiUid), {
+        prenom: data.prenom || data.email,
+        avatar: data.avatar || "🙂",
         date: Date.now()
-      };
+      });
 
-      // 1️⃣ Demande côté receveur
-      await setDoc(doc(db, "amisDemandes", amiUid, "list", currentUser.uid), profilEnvoyeur);
-
-      // 2️⃣ Demande miroir côté envoyeur
-      await setDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", amiUid), profilReceveur);
-
-      alert("✅ Demande envoyée !");
+      confirmationMessage.textContent = "✅ Demande envoyée !";
+      setTimeout(() => confirmationMessage.textContent = "", 3000);
     }
 
-    const confirmationMessage = document.getElementById("confirmationMessage");
-
-    // 📤 Bouton Ajouter
     addAmiBtn.addEventListener("click", async () => {
       const email = amiEmailInput.value.trim();
       if (!email || !currentUser) return;
-
-      // ⏳ Optionnel : afficher "Envoi en cours..."
-  confirmationMessage.textContent = "⏳ Envoi en cours...";
-
+      confirmationMessage.textContent = "⏳ Envoi en cours...";
       await envoyerDemandeAmi(email, currentUser);
       amiEmailInput.value = "";
-
-      // ✅ Afficher le message de confirmation
-  confirmationMessage.textContent = "✅ Demande envoyée !";
-  setTimeout(() => confirmationMessage.textContent = "", 3000);
     });
 
-    // 🔎 Récupérer profil joueur
     async function getProfil(uid) {
       const s = await getDoc(doc(db, "joueurs", uid));
       if (!s.exists()) return { prenom: "Joueur", avatar: "🙂" };
