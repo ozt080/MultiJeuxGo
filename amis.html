@@ -24,6 +24,7 @@
     <h3>Ajouter un ami par email</h3>
     <input id="amiEmail" placeholder="Email de l'ami (ex: hugo@gmail.com)">
     <button class="btn" id="addAmiBtn">Ajouter</button>
+    <p id="confirmationMessage" style="color:green; margin-top:8px;"></p>
   </div>
 
   <div class="card">
@@ -120,12 +121,22 @@
       alert("✅ Demande envoyée !");
     }
 
+    const confirmationMessage = document.getElementById("confirmationMessage");
+
     // 📤 Bouton Ajouter
     addAmiBtn.addEventListener("click", async () => {
       const email = amiEmailInput.value.trim();
       if (!email || !currentUser) return;
+
+      // ⏳ Optionnel : afficher "Envoi en cours..."
+  confirmationMessage.textContent = "⏳ Envoi en cours...";
+
       await envoyerDemandeAmi(email, currentUser);
       amiEmailInput.value = "";
+
+      // ✅ Afficher le message de confirmation
+  confirmationMessage.textContent = "✅ Demande envoyée !";
+  setTimeout(() => confirmationMessage.textContent = "", 3000); // disparaît après 3 secondes
     });
 
     // 🔎 Récupérer profil joueur
