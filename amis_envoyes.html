@@ -18,8 +18,9 @@
     <a href="amis_envoyes.html">Demandes envoyées</a>
   </header>
 
-  <h1>📤 Demandes d’amis envoyées</h1>
+  <h1>📤 Demandes d'amis envoyées</h1>
   <p>Voici les demandes que tu as envoyées. Tu peux les annuler si nécessaire.</p>
+  <p id="debugInfo" style="color:blue; margin:8px;"></p>
 
   <div class="card">
     <h3>Mes demandes envoyées</h3>
@@ -47,6 +48,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    const debugInfo = document.getElementById("debugInfo");
     const demandesEnvoyees = document.getElementById("demandesEnvoyees");
     let currentUser = null;
 
@@ -56,10 +58,8 @@
         return;
       }
       currentUser = user;
+      debugInfo.textContent = "Connecté en tant que : " + user.email;
 
-      // Les demandes envoyées sont stockées dans amisDemandes/{uidReceveur}/list/{uidDemandeur}
-      // On doit donc écouter toutes les collections où currentUser est demandeur
-      // Pour simplifier, on peut créer une collection miroir "amisEnvoyes/{uid}/list/{uidReceveur}"
       const col = collection(db, "amisEnvoyes", user.uid, "list");
       onSnapshot(col, (snap) => {
         demandesEnvoyees.innerHTML = "";
@@ -67,7 +67,6 @@
           demandesEnvoyees.innerHTML = "<p>Aucune demande envoyée.</p>";
           return;
         }
-
         snap.docs.forEach(d => {
           const uidReceveur = d.id;
           const data = d.data();
@@ -81,13 +80,14 @@
       });
     });
 
+    // ❌ Fonction pour annuler une demande
     window.annuler = async function(uidReceveur) {
       if (!currentUser) return;
-      // Supprimer la demande côté receveur
-      await deleteDoc(doc(db, "amisDemandes", uidReceveur, "list", currentUser.uid));
-      // Supprimer la demande côté envoyeur (miroir)
+      // Supprimer côté envoyeur
       await deleteDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", uidReceveur));
-      alert("❌ Demande annulée.");
+      // Supprimer côté receveur
+      await deleteDoc(doc(db, "amisDemandes", uidReceveur, "list", currentUser.uid));
+      alert("✅ Demande annulée !");
     };
   </script>
 </body>

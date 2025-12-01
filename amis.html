@@ -90,36 +90,42 @@
 
     // 📧 Fonction pour envoyer une demande d’ami
     async function envoyerDemandeAmi(email, currentUser) {
-      const q = query(collection(db, "joueurs"), where("email", "==", email));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        confirmationMessage.style.color = "red";
-        confirmationMessage.textContent = "❌ Aucun joueur trouvé avec cet email.";
-        return;
-      }
+  const q = query(collection(db, "joueurs"), where("email", "==", email));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    confirmationMessage.textContent = "❌ Aucun joueur trouvé avec cet email.";
+    return;
+  }
 
-      const amiUid = snap.docs[0].id;
-      const data = snap.docs[0].data();
+  const amiUid = snap.docs[0].id;
+  const data = snap.docs[0].data();
 
-      // 1️⃣ Demande côté receveur
-      await setDoc(doc(db, "amisDemandes", amiUid, "list", currentUser.uid), {
-        email: currentUser.email,
-        prenom: currentUser.displayName || currentUser.email,
-        avatar: "🙂",
-        date: Date.now()
-      });
+  // Demande côté receveur
+  await setDoc(doc(db, "amisDemandes", amiUid, "list", currentUser.uid), {
+    email: currentUser.email,
+    prenom: currentUser.displayName || currentUser.email,
+    avatar: "🙂",
+    date: Date.now()
+  });
 
-      // 2️⃣ Demande miroir côté envoyeur
-      await setDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", amiUid), {
-        prenom: data.prenom || data.email,
-        avatar: data.avatar || "🙂",
-        date: Date.now()
-      });
+  // Demande miroir côté envoyeur
+  await setDoc(doc(db, "amisEnvoyes", currentUser.uid, "list", amiUid), {
+    prenom: data.prenom || data.email,
+    avatar: data.avatar || "🙂",
+    date: Date.now()
+  });
 
-      confirmationMessage.style.color = "green";
-      confirmationMessage.textContent = "✅ Demande envoyée !";
-      setTimeout(() => confirmationMessage.textContent = "", 3000);
-    }
+  await setDoc(doc(db, "joueurs", cred.user.uid), {
+  email: cred.user.email,
+  prenom: signupPrenom.value.trim() || cred.user.email,
+  avatar: "🙂",
+  createdAt: Date.now()
+});
+
+  confirmationMessage.textContent = "✅ Demande envoyée !";
+  setTimeout(() => confirmationMessage.textContent = "", 3000);
+}
+
 
     // 📤 Bouton Ajouter
     addAmiBtn.addEventListener("click", async () => {
