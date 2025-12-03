@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Demandes reçues - MultiJeuxGo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demandes reçues</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,12 +13,11 @@
     <a href="amis.html">Mes amis</a>
     <a href="chat.html">Chat</a>
     <a href="profil.html">Mon Profil</a>
-    <a href="amis_recu.html">Demandes reçues</a>
-    <a href="amis_envoyes.html">Demandes envoyées</a>
+    <a href="logout.html">Se déconnecter</a>
   </header>
 
   <h1>📥 Demandes d'amis reçues</h1>
-  <p>Voici les demandes que tu as reçues. Tu peux les accepter ou les refuser.</p>
+  <!-- Debug info pour afficher email + UID -->
   <p id="debugInfo" style="color:blue; margin:8px;"></p>
 
   <div class="card">
@@ -29,9 +27,12 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import {
+      getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
+    // ⚠️ Mets ici ton vrai config Firebase
     const firebaseConfig = {
   apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
   authDomain: "multijeugo.firebaseapp.com",
@@ -46,18 +47,25 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const debugInfo = document.getElementById("debugInfo");
     const demandesRecues = document.getElementById("demandesRecues");
-    let currentUser = null;
 
+    // Fonction pour afficher UID + email
+    function afficherUID(auth) {
+      const debugInfo = document.getElementById("debugInfo");
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          debugInfo.textContent = "❌ Utilisateur non connecté.";
+          window.location.href = "login.html";
+          return;
+        }
+        debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+      });
+    }
+    afficherUID(auth);
+
+    // Écoute en temps réel des demandes reçues
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-      currentUser = user;
-      debugInfo.textContent = "Connecté en tant que : " + user.email;
-
+      if (!user) return;
       const col = collection(db, "amisDemandes", user.uid, "list");
       onSnapshot(col, (snap) => {
         demandesRecues.innerHTML = "";
@@ -66,54 +74,41 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase
           return;
         }
         snap.docs.forEach(d => {
-          const uidDemandeur = d.id;
+          const uidEnvoyeur = d.id;
           const data = d.data();
           demandesRecues.innerHTML += `
             <div class="player">
               <span class="avatar">${data.avatar}</span>
               <span class="name">${data.prenom}</span>
-              <button class="btn" onclick="accepter('${uidDemandeur}', '${data.prenom}', '${data.avatar}')">✅ Accepter</button>
-              <button class="btn" onclick="refuser('${uidDemandeur}')">❌ Refuser</button>
+              <button class="btn" onclick="accepter('${uidEnvoyeur}')">✅ Accepter</button>
+              <button class="btn" onclick="refuser('${uidEnvoyeur}')">❌ Refuser</button>
             </div>`;
         });
       });
     });
 
-    // ✅ Accepter une demande
-    window.accepter = async function(uidDemandeur, prenom, avatar) {
-      if (!currentUser) return;
-
-      // Ajouter dans amis
-      await setDoc(doc(db, "amis", currentUser.uid, "list", uidDemandeur), {
-        prenom,
-        avatar,
+    // Fonction pour accepter une demande
+    window.accepter = async function(uidEnvoyeur) {
+      const user = auth.currentUser;
+      if (!user) return;
+      // Supprimer la demande des deux côtés
+      await deleteDoc(doc(db, "amisDemandes", user.uid, "list", uidEnvoyeur));
+      await deleteDoc(doc(db, "amisEnvoyes", uidEnvoyeur, "list", user.uid));
+      // Créer la relation d’amitié
+      await setDoc(doc(db, "amis", user.uid, "list", uidEnvoyeur), {
         date: Date.now()
       });
-
-      await setDoc(doc(db, "amis", uidDemandeur, "list", currentUser.uid), {
-        prenom: currentUser.displayName || currentUser.email,
-        avatar: "🙂",
+      await setDoc(doc(db, "amis", uidEnvoyeur, "list", user.uid), {
         date: Date.now()
       });
-
-      // Supprimer la demande côté receveur
-      await deleteDoc(doc(db, "amisDemandes", currentUser.uid, "list", uidDemandeur));
-      // Supprimer la demande miroir côté envoyeur
-      await deleteDoc(doc(db, "amisEnvoyes", uidDemandeur, "list", currentUser.uid));
-
-      alert("✅ Demande acceptée !");
     };
 
-    // ❌ Refuser une demande
-    window.refuser = async function(uidDemandeur) {
-      if (!currentUser) return;
-
-      // Supprimer la demande côté receveur
-      await deleteDoc(doc(db, "amisDemandes", currentUser.uid, "list", uidDemandeur));
-      // Supprimer la demande miroir côté envoyeur
-      await deleteDoc(doc(db, "amisEnvoyes", uidDemandeur, "list", currentUser.uid));
-
-      alert("❌ Demande refusée !");
+    // Fonction pour refuser une demande
+    window.refuser = async function(uidEnvoyeur) {
+      const user = auth.currentUser;
+      if (!user) return;
+      await deleteDoc(doc(db, "amisDemandes", user.uid, "list", uidEnvoyeur));
+      await deleteDoc(doc(db, "amisEnvoyes", uidEnvoyeur, "list", user.uid));
     };
   </script>
 </body>

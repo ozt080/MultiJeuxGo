@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Chat - MultiJeuxGo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,21 +13,37 @@
     <a href="amis.html">Mes amis</a>
     <a href="chat.html">Chat</a>
     <a href="profil.html">Mon Profil</a>
+    <a href="logout.html">Se déconnecter</a>
   </header>
 
-  <h1>💬 Chat entre amis</h1>
+  <h1>💬 Chat avec mes amis</h1>
+  <!-- Debug info pour afficher email + UID -->
+  <p id="debugInfo" style="color:blue; margin:8px;"></p>
 
   <div class="card">
-    <h3>Messages</h3>
-    <div id="chatBox">Chargement...</div>
-    <input id="chatInput" placeholder="Écris ton message">
-    <button class="btn" id="sendBtn">Envoyer</button>
+    <h3>Choisis un ami pour discuter</h3>
+    <div id="amisList">Chargement...</div>
+  </div>
+
+  <div class="card">
+    <h3>Conversation</h3>
+    <div id="messagesBox" style="max-height:300px;overflow:auto;border:1px solid #ccc;padding:8px;">
+      Sélectionne un ami pour voir les messages.
+    </div>
+    <form id="messageForm" style="margin-top:8px; display:none;">
+      <input id="messageInput" placeholder="Écris ton message" required>
+      <button class="btn" type="submit">Envoyer</button>
+    </form>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import {
+      getFirestore, collection, doc, setDoc, onSnapshot, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    // ⚠️ Mets ici ton vrai config Firebase
     const firebaseConfig = {
   apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
   authDomain: "multijeugo.firebaseapp.com",
@@ -43,41 +58,88 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const chatBox = document.getElementById("chatBox");
-    const chatInput = document.getElementById("chatInput");
-    const sendBtn = document.getElementById("sendBtn");
+    const amisList = document.getElementById("amisList");
+    const messagesBox = document.getElementById("messagesBox");
+    const messageForm = document.getElementById("messageForm");
+    const messageInput = document.getElementById("messageInput");
 
-    let currentUser = null;
+    let amiSelectionne = null;
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
+    // Fonction pour afficher UID + email
+    function afficherUID(auth) {
+      const debugInfo = document.getElementById("debugInfo");
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          debugInfo.textContent = "❌ Utilisateur non connecté.";
+          window.location.href = "login.html";
+          return;
+        }
+        debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+      });
+    }
+    afficherUID(auth);
+
+    // Charger la liste des amis
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      const col = collection(db, "amis", user.uid, "list");
+      const snap = await getDocs(col);
+      amisList.innerHTML = "";
+      if (snap.empty) {
+        amisList.innerHTML = "<p>Aucun ami pour discuter.</p>";
         return;
       }
-      currentUser = user;
+      snap.forEach(d => {
+        const amiUid = d.id;
+        amisList.innerHTML += `
+          <button class="btn" onclick="ouvrirChat('${amiUid}')">💬 ${amiUid}</button>
+        `;
+      });
+    });
 
-      const q = query(collection(db, "chat"), orderBy("date"));
-      onSnapshot(q, (snap) => {
-        chatBox.innerHTML = "";
-        snap.forEach(doc => {
-          const msg = doc.data();
-          chatBox.innerHTML += `<div><b>${msg.nom}:</b> ${msg.texte}</div>`;
+    // Ouvrir un chat avec un ami
+    window.ouvrirChat = function(amiUid) {
+      const user = auth.currentUser;
+      if (!user) return;
+      amiSelectionne = amiUid;
+      messagesBox.innerHTML = "Chargement des messages...";
+      messageForm.style.display = "block";
+
+      const key = user.uid < amiUid ? user.uid + "_" + amiUid : amiUid + "_" + user.uid;
+      const col = collection(db, "messages", key, "list");
+
+      onSnapshot(col, (snap) => {
+        messagesBox.innerHTML = "";
+        if (snap.empty) {
+          messagesBox.innerHTML = "<p>Aucun message pour l'instant.</p>";
+          return;
+        }
+        snap.forEach(m => {
+          const data = m.data();
+          messagesBox.innerHTML += `
+            <div>
+              <b>${data.sender}</b>: ${data.body}
+              <small style="color:#666;">(${new Date(data.date).toLocaleString()})</small>
+            </div>
+          `;
         });
-        chatBox.scrollTop = chatBox.scrollHeight;
       });
-    });
 
-    sendBtn.addEventListener("click", async () => {
-      const texte = chatInput.value.trim();
-      if (!texte || !currentUser) return;
-      await addDoc(collection(db, "chat"), {
-        texte,
-        nom: currentUser.displayName || currentUser.email,
-        uid: currentUser.uid,
-        date: Date.now()
-      });
-      chatInput.value = "";
-    });
+      // Envoi de message
+      messageForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const body = messageInput.value.trim();
+        if (!body) return;
+        const key = user.uid < amiUid ? user.uid + "_" + amiUid : amiUid + "_" + user.uid;
+        const msgId = Date.now().toString();
+        await setDoc(doc(db, "messages", key, "list", msgId), {
+          sender: user.email,
+          body: body,
+          date: Date.now()
+        });
+        messageInput.value = "";
+      };
+    };
   </script>
 </body>
 </html>

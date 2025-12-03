@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Mon Profil - MultiJeuxGo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Profil</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,37 +11,40 @@
     <a href="classement.html">Classement</a>
     <a href="guide.html">Comment jouer</a>
     <a href="amis.html">Mes amis</a>
+    <a href="chat.html">Chat</a>
     <a href="profil.html">Mon Profil</a>
+    <a href="logout.html">Se déconnecter</a>
   </header>
 
   <h1>👤 Mon Profil</h1>
+  <!-- Debug info pour afficher email + UID -->
+  <p id="debugInfo" style="color:blue; margin:8px;"></p>
 
   <div class="card">
-    <h3>Informations personnelles</h3>
-    <p><b>Email :</b> <span id="email">...</span></p>
-    <p><b>Prénom :</b> <span id="prenom">...</span></p>
-    <p><b>Avatar :</b> <span id="avatar">🙂</span></p>
-    <p><b>Rang :</b> <span id="rang">1200</span></p>
+    <h3>Mes informations</h3>
+    <p><b>Email :</b> <span id="emailUser"></span></p>
+    <p><b>Prénom :</b> <span id="prenomUser"></span></p>
+    <p><b>Avatar :</b> <span id="avatarUser"></span></p>
   </div>
 
   <div class="card">
     <h3>Modifier mon profil</h3>
-    <input id="newPrenom" placeholder="Nouveau prénom">
-    <input id="newAvatar" placeholder="Nouvel avatar (emoji)">
-    <button class="btn" id="updateBtn">Mettre à jour</button>
-  </div>
-
-  <div class="card">
-    <h3>Statistiques</h3>
-    <p><b>Global :</b> <span id="statsGlobal">0 joués, 0 gagnés, 0 perdus</span></p>
-    <p><b>Ludo :</b> <span id="statsLudo">0 joués, 0 gagnés, 0 perdus</span></p>
-    <p><b>Uno :</b> <span id="statsUno">0 joués, 0 gagnés, 0 perdus</span></p>
+    <form id="profilForm">
+      <input id="prenomInput" type="text" placeholder="Nouveau prénom">
+      <input id="avatarInput" type="text" placeholder="Nouvel avatar (emoji)">
+      <button class="btn" type="submit">💾 Sauvegarder</button>
+    </form>
+    <p id="confirmationMessage"></p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    // ⚠️ Mets ici ton vrai config Firebase
     const firebaseConfig = {
   apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
   authDomain: "multijeugo.firebaseapp.com",
@@ -52,68 +54,65 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase
   appId: "1:181253022362:web:3eca9851efdb7541a5f523",
   measurementId: "G-YKC3SHW17Q"
 };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const emailEl = document.getElementById("email");
-    const prenomEl = document.getElementById("prenom");
-    const avatarEl = document.getElementById("avatar");
-    const rangEl = document.getElementById("rang");
-    const statsGlobalEl = document.getElementById("statsGlobal");
-    const statsLudoEl = document.getElementById("statsLudo");
-    const statsUnoEl = document.getElementById("statsUno");
+    const emailUser = document.getElementById("emailUser");
+    const prenomUser = document.getElementById("prenomUser");
+    const avatarUser = document.getElementById("avatarUser");
+    const profilForm = document.getElementById("profilForm");
+    const confirmationMessage = document.getElementById("confirmationMessage");
 
-    const newPrenom = document.getElementById("newPrenom");
-    const newAvatar = document.getElementById("newAvatar");
-    const updateBtn = document.getElementById("updateBtn");
-
-    let currentUser = null;
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-      currentUser = user;
-      await chargerProfil(user.uid);
-    });
-
-    async function chargerProfil(uid) {
-      const snap = await getDoc(doc(db, "joueurs", uid));
-      if (!snap.exists()) return;
-      const data = snap.data();
-
-      emailEl.textContent = data.email || "...";
-      prenomEl.textContent = data.prenom || "...";
-      avatarEl.textContent = data.avatar || "🙂";
-      rangEl.textContent = data.rang ?? 1200;
-
-      const g = data.stats?.global || { joués: 0, gagnés: 0, perdus: 0 };
-      statsGlobalEl.textContent = `${g.joués} joués, ${g.gagnés} gagnés, ${g.perdus} perdus`;
-
-      const l = data.stats?.ludo || { joués: 0, gagnés: 0, perdus: 0 };
-      statsLudoEl.textContent = `${l.joués} joués, ${l.gagnés} gagnés, ${l.perdus} perdus`;
-
-      const u = data.stats?.uno || { joués: 0, gagnés: 0, perdus: 0 };
-      statsUnoEl.textContent = `${u.joués} joués, ${u.gagnés} gagnés, ${u.perdus} perdus`;
+    // Fonction pour afficher UID + email
+    function afficherUID(auth) {
+      const debugInfo = document.getElementById("debugInfo");
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          debugInfo.textContent = "❌ Utilisateur non connecté.";
+          window.location.href = "login.html";
+          return;
+        }
+        debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+      });
     }
+    afficherUID(auth);
 
-    updateBtn.addEventListener("click", async () => {
-      if (!currentUser) return;
-      const prenom = newPrenom.value.trim();
-      const avatar = newAvatar.value.trim() || "🙂";
+    // Charger les infos du profil en temps réel
+    onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      emailUser.textContent = user.email;
 
-      await setDoc(doc(db, "joueurs", currentUser.uid), {
-        prenom: prenom || undefined,
-        avatar,
-        updatedAt: Date.now()
-      }, { merge: true });
+      const ref = doc(db, "joueurs", user.uid);
+      onSnapshot(ref, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          prenomUser.textContent = data.prenom || "(non défini)";
+          avatarUser.textContent = data.avatar || "🙂";
+        } else {
+          prenomUser.textContent = "(non défini)";
+          avatarUser.textContent = "🙂";
+        }
+      });
 
-      alert("✅ Profil mis à jour !");
-      await chargerProfil(currentUser.uid);
-      newPrenom.value = "";
-      newAvatar.value = "";
+      // Sauvegarder les modifications
+      profilForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const prenom = document.getElementById("prenomInput").value.trim();
+        const avatar = document.getElementById("avatarInput").value.trim();
+
+        try {
+          await setDoc(ref, {
+            prenom: prenom || user.email,
+            avatar: avatar || "🙂"
+          }, { merge: true });
+
+          confirmationMessage.textContent = "✅ Profil mis à jour avec succès.";
+        } catch (err) {
+          confirmationMessage.textContent = "❌ Erreur : " + err.message;
+        }
+      };
     });
   </script>
 </body>
