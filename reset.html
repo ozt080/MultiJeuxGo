@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Réinitialiser le mot de passe</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🔐 Réinitialiser le mot de passe</h1>
+  <form id="resetForm">
+    <input type="email" id="emailReset" placeholder="Ton email" required>
+    <button class="btn" type="submit">Envoyer le lien</button>
+  </form>
+  <p id="message"></p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+    const firebaseConfig = { /* ta config ici */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const resetForm = document.getElementById("resetForm");
+    const emailReset = document.getElementById("emailReset");
+    const message = document.getElementById("message");
+
+    resetForm.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await sendPasswordResetEmail(auth, emailReset.value);
+        message.textContent = "✅ Email de réinitialisation envoyé.";
+      } catch (err) {
+        message.textContent = "❌ Erreur : " + err.message;
+      }
+    };
+  </script>
+</body>
+</html>
