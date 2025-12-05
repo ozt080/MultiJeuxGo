@@ -2,34 +2,58 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Réinitialiser le mot de passe</title>
+  <title>Modifier le mot de passe</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🔐 Réinitialiser le mot de passe</h1>
+  <h1>🔐 Modifier le mot de passe</h1>
+  <p id="debugInfo" style="color:blue;"></p>
+
   <form id="resetForm">
-    <input type="email" id="emailReset" placeholder="Ton email" required>
-    <button class="btn" type="submit">Envoyer le lien</button>
+    <input type="password" id="newPassword" placeholder="Nouveau mot de passe" required>
+    <button class="btn" type="submit">Modifier</button>
   </form>
   <p id="message"></p>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-    const firebaseConfig = { /* ta config ici */ };
+    const firebaseConfig = {
+        apiKey: "AIzaSyCL3rtG0CcD4T6XGEGfGtHLU39rp_wsSqA",
+  authDomain: "multijeugo.firebaseapp.com",
+  projectId: "multijeugo",
+  storageBucket: "multijeugo.firebasestorage.app",
+  messagingSenderId: "181253022362",
+  appId: "1:181253022362:web:3eca9851efdb7541a5f523",
+  measurementId: "G-YKC3SHW17Q"
+};
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
     const resetForm = document.getElementById("resetForm");
-    const emailReset = document.getElementById("emailReset");
+    const newPassword = document.getElementById("newPassword");
     const message = document.getElementById("message");
+    const debugInfo = document.getElementById("debugInfo");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        debugInfo.textContent = "❌ Tu dois être connecté pour modifier ton mot de passe.";
+        window.location.href = "login.html";
+        return;
+      }
+      currentUser = user;
+      debugInfo.textContent = `✅ Connecté : ${user.email}`;
+    });
 
     resetForm.onsubmit = async (e) => {
       e.preventDefault();
       try {
-        await sendPasswordResetEmail(auth, emailReset.value);
-        message.textContent = "✅ Email de réinitialisation envoyé.";
+        await updatePassword(currentUser, newPassword.value);
+        message.textContent = "✅ Mot de passe modifié avec succès.";
+        newPassword.value = "";
       } catch (err) {
         message.textContent = "❌ Erreur : " + err.message;
       }
