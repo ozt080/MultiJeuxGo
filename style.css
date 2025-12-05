@@ -1,98 +1,12 @@
-:root {
-  --primary: #00aaff;
-  --bg1: #4facfe;
-  --bg2: #00f2fe;
-  --cardBg: #ffffff;
-  --textDark: #0b1b2b;
-  --textLight: #ffffff;
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --radius: 12px;
-  --font: 'Poppins', sans-serif;
-}
-
-body {
-  font-family: var(--font);
-  background: linear-gradient(135deg, var(--bg1), var(--bg2));
-  color: var(--textLight);
-  margin: 0;
-  padding: 20px;
-  text-align: center;
-}
-
-h1, h2, h3 {
-  margin: 16px 0;
-}
-
-.card {
-  background: var(--cardBg);
-  color: var(--textDark);
-  border-radius: var(--radius);
-  padding: 16px;
-  max-width: 480px;
-  margin: 16px auto;
-  box-shadow: var(--shadow);
-  text-align: left;
-}
-
-.btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 1em;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.btn:hover {
-  filter: brightness(0.95);
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: none;
-  font-size: 1em;
-}
-
-header.tabs {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-header.tabs a {
-  background: var(--cardBg);
-  color: var(--textDark);
-  padding: 8px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-header.tabs a:hover {
-  background: #f0f0f0;
-}
-
-#chatList p {
-  margin: 6px 0;
-  font-size: 0.95em;
-}
-
-.avatar {
-  font-size: 1.5em;
-  margin-right: 8px;
-}
-
-.player {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid #eee;
-}
+body { font-family: system-ui, Arial; margin: 0; background: #0f1420; color: #fff; }
+header.tabs { display:flex; gap:12px; padding:10px; background:#121a2a; position:sticky; top:0; }
+header.tabs a { color:#9fd3ff; text-decoration:none; padding:6px 10px; border-radius:6px; }
+header.tabs a:hover { background:#1a2540; }
+h1 { text-align:center; }
+.card { background:#162036; padding:12px; margin:12px; border-radius:12px; }
+.btn { background:#22c55e; color:#0b1020; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+.btn:hover { background:#19a64d; }
+.games { display:flex; flex-wrap:wrap; justify-content:center; gap:16px; padding:16px; }
+.game-card { width:200px; background:#162036; border-radius:12px; padding:10px; text-align:center; }
+.game-card img { width:100%; border-radius:8px; }
+@media (max-width:600px){ .game-card{ width:100%; } }

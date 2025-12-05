@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Salles</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <header class="tabs">
+    <a href="index.html">Accueil</a>
+    <a href="salles.html">Salles</a>
+    <a href="chat.html">Chat</a>
+  </header>
+
+  <h1>🗣️ Salles publiques</h1>
+  <p id="debugInfo" style="color:blue;"></p>
+  <div class="card">
+    <input id="nomSalle" placeholder="Nom de la salle">
+    <button class="btn" id="creerSalle">Créer</button>
+  </div>
+  <div id="listeSalles">Chargement...</div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* ta config */ };
+    const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+    const debugInfo = document.getElementById("debugInfo");
+    const listeSalles = document.getElementById("listeSalles");
+    const creerSalle = document.getElementById("creerSalle");
+    const nomSalle = document.getElementById("nomSalle");
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { window.location.href = "login.html"; return; }
+      currentUser = user;
+      debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+
+      onSnapshot(collection(db, "salles"), (snap) => {
+        listeSalles.innerHTML = "";
+        snap.forEach(s => {
+          const d = s.data();
+          listeSalles.innerHTML += `
+            <div class="card">
+              <b>${d.nom}</b> — OUVERT
+              <a class="btn" href="salle_chat.html?id=${s.id}">Entrer</a>
+            </div>`;
+        });
+      });
+    });
+
+    creerSalle.addEventListener("click", async () => {
+      const nom = nomSalle.value.trim();
+      if (!nom) return;
+      await addDoc(collection(db, "salles"), { nom, date: Date.now() });
+      nomSalle.value = "";
+    });
+  </script>
+</body>
+</html>

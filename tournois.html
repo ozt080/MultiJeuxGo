@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Tournois</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <header class="tabs">
+    <a href="index.html">Accueil</a>
+    <a href="uno_match.html">Uno</a>
+    <a href="tournois.html">Tournois</a>
+    <a href="profil.html">Profil</a>
+  </header>
+
+  <h1>🏆 Tournois</h1>
+  <p id="debugInfo" style="color:blue;"></p>
+  <div id="listeTournois">Chargement...</div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* ta config */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const debugInfo = document.getElementById("debugInfo");
+    const listeTournois = document.getElementById("listeTournois");
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { window.location.href = "login.html"; return; }
+      currentUser = user;
+      debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+
+      onSnapshot(collection(db, "tournois"), (snap) => {
+        listeTournois.innerHTML = "";
+        if (snap.empty) { listeTournois.textContent = "Aucun tournoi."; return; }
+        snap.forEach(t => {
+          const d = t.data();
+          listeTournois.innerHTML += `
+            <div class="card">
+              <h3>${d.nom} (${d.jeu})</h3>
+              <p>Statut: ${d.statut}</p>
+              <p>Inscrits: ${d.joueursInscrits?.length || 0}</p>
+              <button class="btn" onclick="inscrire('${t.id}')">S'inscrire</button>
+            </div>
+          `;
+        });
+      });
+    });
+
+    window.inscrire = async (id) => {
+      if (!currentUser) return;
+      await updateDoc(doc(db, "tournois", id), { joueursInscrits: arrayUnion(currentUser.uid) });
+    };
+  </script>
+</body>
+</html>

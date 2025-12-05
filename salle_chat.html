@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Salon</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <header class="tabs"><a href="salles.html">Retour</a></header>
+  <h1>💬 Salon public</h1>
+  <p id="debugInfo" style="color:blue;"></p>
+  <div class="card" id="chatBox" style="max-height:300px;overflow:auto;border:1px solid #ccc;padding:8px;"></div>
+  <input id="chatInput" placeholder="Dites bonjour..."><button id="sendChat" class="btn">Envoyer</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* ta config */ };
+    const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const salleId = params.get("id");
+
+    const debugInfo = document.getElementById("debugInfo");
+    const chatBox = document.getElementById("chatBox");
+    const chatInput = document.getElementById("chatInput");
+    const sendChat = document.getElementById("sendChat");
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { window.location.href = "login.html"; return; }
+      currentUser = user;
+      debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+
+      const chatCol = collection(db, "salles", salleId, "chat");
+      onSnapshot(chatCol, (snap) => {
+        chatBox.innerHTML = "";
+        snap.forEach(m => {
+          const d = m.data();
+          chatBox.innerHTML += `<div><b>${d.sender}</b>: ${d.body} <small style="color:#666;">(${new Date(d.date).toLocaleTimeString()})</small></div>`;
+        });
+      });
+
+      sendChat.addEventListener("click", async () => {
+        const body = chatInput.value.trim();
+        if (!body) return;
+        await addDoc(collection(db, "salles", salleId, "chat"), { sender: currentUser.email, body, date: Date.now() });
+        chatInput.value = "";
+      });
+    });
+  </script>
+</body>
+</html>

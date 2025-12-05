@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Uno - Partie</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="tabs">
+    <a href="uno_match.html">Retour matchmaking</a>
+  </header>
+
+  <h1>🃏 Uno — Partie</h1>
+  <p id="debugInfo" style="color:blue;"></p>
+  <p id="meta"></p>
+
+  <div class="card">
+    <h3>Pile</h3>
+    <div id="pile"></div>
+  </div>
+
+  <div class="card">
+    <h3>Mes cartes</h3>
+    <div id="main"></div>
+    <p id="action"></p>
+  </div>
+
+  <div class="card">
+    <h3>Chat</h3>
+    <div id="chatBox" style="max-height:200px;overflow:auto;border:1px solid #ccc;padding:8px;"></div>
+    <input id="chatInput" placeholder="Dites bonjour...">
+    <button id="sendChat" class="btn">Envoyer</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, onSnapshot, setDoc, updateDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* ta config */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const partieId = params.get("id");
+
+    const debugInfo = document.getElementById("debugInfo");
+    const meta = document.getElementById("meta");
+    const pileDiv = document.getElementById("pile");
+    const mainDiv = document.getElementById("main");
+    const action = document.getElementById("action");
+    const chatBox = document.getElementById("chatBox");
+    const chatInput = document.getElementById("chatInput");
+    const sendChat = document.getElementById("sendChat");
+
+    let currentUser = null;
+    const partieRef = doc(db, "partiesUno", partieId);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = "login.html"; return; }
+      currentUser = user;
+      debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+
+      onSnapshot(partieRef, (snap) => {
+        if (!snap.exists()) return;
+        const p = snap.data();
+        meta.textContent = `Mode: ${p.mode} | Tour: ${p.tour} | Statut: ${p.statut}`;
+        const top = p.pile?.[p.pile.length-1];
+        pileDiv.textContent = top ? `${top.couleur || 'joker'} ${top.valeur}` : "(pile vide)";
+      });
+
+      const mainRef = doc(db, "partiesUno", partieId, "mains", currentUser.uid);
+      onSnapshot(mainRef, (mSnap) => {
+        mainDiv.innerHTML = "";
+        if (!mSnap.exists()) { mainDiv.innerHTML = "<p>Pas de cartes.</p>"; return; }
+        const cartes = mSnap.data().cartes || [];
+        cartes.forEach((c, idx) => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.textContent = `${c.couleur || 'wild'} ${c.valeur}`;
+          btn.onclick = () => jouerCarte(idx, c);
+          mainDiv.appendChild(btn);
+        });
+      });
+
+      const chatCol = collection(db, "partiesUno", partieId, "chat");
+      onSnapshot(chatCol, (cSnap) => {
+        chatBox.innerHTML = "";
+        cSnap.forEach(msg => {
+          const m = msg.data();
+          const div = document.createElement("div");
+          div.innerHTML = `<b>${m.sender}</b>: ${m.body} <small style="color:#666;">(${new Date(m.date).toLocaleTimeString()})</small>`;
+          chatBox.appendChild(div);
+        });
+      });
+
+      sendChat.addEventListener("click", async () => {
+        const body = chatInput.value.trim();
+        if (!body) return;
+        await addDoc(collection(db, "partiesUno", partieId, "chat"), { sender: currentUser.email, body, date: Date.now() });
+        chatInput.value = "";
+      });
+    });
+
+    async function jouerCarte(idx, carte) {
+      const pSnap = await getDoc(partieRef);
+      if (!pSnap.exists()) return;
+      const p = pSnap.data();
+      if (p.tour !== currentUser.uid) { action.textContent = "⏳ Pas ton tour."; return; }
+      const top = p.pile?.[p.pile.length - 1];
+      const compatible = !top || top.couleur === carte.couleur || top.valeur === carte.valeur || carte.type === "wild";
+      if (!compatible) { action.textContent = "❌ Carte non compatible."; return; }
+
+      const nouvellePile = [...(p.pile || []), carte];
+      const mainRef = doc(db, "partiesUno", partieId, "mains", currentUser.uid);
+      const mSnap = await getDoc(mainRef);
+      const cartes = mSnap.data().cartes || [];
+      cartes.splice(idx, 1);
+
+      const joueurs = p.joueurs;
+      const i = joueurs.indexOf(currentUser.uid);
+      const prochain = joueurs[(i + 1) % joueurs.length];
+
+      await updateDoc(partieRef, { pile: nouvellePile, tour: prochain });
+      await setDoc(mainRef, { cartes }, { merge: true });
+      action.textContent = "✅ Carte jouée.";
+    }
+  </script>
+</body>
+</html>

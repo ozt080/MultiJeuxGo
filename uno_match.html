@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Uno - Files d'attente</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="tabs">
+    <a href="index.html">Accueil</a>
+    <a href="uno_match.html">Uno</a>
+    <a href="tournois.html">Tournois</a>
+    <a href="salles.html">Salles</a>
+    <a href="profil.html">Profil</a>
+  </header>
+
+  <h1>🃏 Uno — Files d'appariement</h1>
+  <p id="debugInfo" style="color:blue;"></p>
+
+  <div class="card">
+    <h3>Quick Play — 2 joueurs — Cartes standard</h3>
+    <button class="btn" id="joinQuick">REJOINDRE</button>
+    <button class="btn" id="leaveQuick">QUITTER LA FILE</button>
+    <p id="statusQuick"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* ta config ici */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const debugInfo = document.getElementById("debugInfo");
+    const statusQuick = document.getElementById("statusQuick");
+    const joinQuick = document.getElementById("joinQuick");
+    const leaveQuick = document.getElementById("leaveQuick");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        debugInfo.textContent = "❌ Utilisateur non connecté.";
+        window.location.href = "login.html";
+        return;
+      }
+      currentUser = user;
+      debugInfo.textContent = `✅ Connecté : ${user.email} | UID : ${user.uid}`;
+      surveillerFile();
+    });
+
+    async function creerPioche() {
+      const couleurs = ["rouge", "jaune", "vert", "bleu"];
+      const pioche = [];
+      for (const col of couleurs) {
+        // cartes 0–9
+        for (let v = 0; v <= 9; v++) {
+          pioche.push({ couleur: col, valeur: v });
+        }
+        // cartes spéciales
+        ["+2", "skip", "reverse"].forEach(type => {
+          pioche.push({ couleur: col, valeur: type });
+        });
+      }
+      // jokers
+      for (let i = 0; i < 4; i++) {
+        pioche.push({ type: "wild", valeur: "joker" });
+      }
+      // mélange
+      for (let i = pioche.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pioche[i], pioche[j]] = [pioche[j], pioche[i]];
+      }
+      return pioche;
+    }
+
+    async function creerPartieAvecDistribution(joueurs) {
+      const pioche = await creerPioche();
+      const mains = {};
+      for (const uid of joueurs) mains[uid] = pioche.splice(0, 7);
+      let premiere = null;
+      while (pioche.length && !premiere) {
+        const c = pioche.shift();
+        if (!c.type) premiere = c;
+      }
+      const ref = await addDoc(collection(db, "partiesUno"), {
+        mode: "quick", joueurs, statut: "en_cours", tour: joueurs[0], pile: [premiere]
+      });
+      for (const uid of joueurs) {
+        await setDoc(doc(db, "partiesUno", ref.id, "mains", uid), { cartes: mains[uid] });
+      }
+      return ref;
+    }
+
+    function surveillerFile() {
+      const queueCol = collection(db, "filesAttente", "quick", "joueurs");
+      onSnapshot(queueCol, async (snap) => {
+        const joueurs = snap.docs.map(d => d.id);
+        statusQuick.textContent = `👥 Joueurs en file: ${joueurs.length}/2`;
+        if (joueurs.length >= 2) {
+          const deux = joueurs.slice(0, 2);
+          const partieRef = await creerPartieAvecDistribution(deux);
+          for (const uid of deux) {
+            await deleteDoc(doc(db, "filesAttente", "quick", "joueurs", uid));
+          }
+          if (deux.includes(currentUser.uid)) {
+            window.location.href = `uno_game.html?id=${partieRef.id}`;
+          }
+        }
+      });
+    }
+
+    joinQuick.addEventListener("click", async () => {
+      if (!currentUser) return;
+      await setDoc(doc(db, "filesAttente", "quick", "joueurs", currentUser.uid), { date: Date.now() });
+      statusQuick.textContent = "⏳ Tu as rejoint la file Quick.";
+    });
+
+    leaveQuick.addEventListener("click", async () => {
+      if (!currentUser) return;
+      await deleteDoc(doc(db, "filesAttente", "quick", "joueurs", currentUser.uid));
+      statusQuick.textContent = "↩️ Tu as quitté la file.";
+    });
+  </script>
+</body>
+</html>
