@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- BARRE DU HAUT -->
+  <header>
+    <div class="logo">Multi<span>Jeux</span>Go</div>
+    <div class="header-btns">
+      <button onclick="window.location='login.html'">Connexion</button>
+      <button class="btn-primary" onclick="window.location='register.html'">Rejoindre</button>
+    </div>
+  </header>
+
+  <!-- SECTION HÉROS -->
+  <section class="hero">
+    <h1>Joue avec tes amis partout !</h1>
+    <p>Des dizaines de jeux, des salles privées ou publiques.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="window.location='lobby.html'">Jouer maintenant</button>
+    </div>
+  </section>
+
+  <!-- LISTE DES JEUX -->
+  <section class="games">
+    <h2>Nos jeux</h2>
+    <div class="games-grid">
+      <div class="game-card">
+        <div class="game-icon">♟️</div>
+        <div class="game-name">Échecs</div>
+      </div>
+      <div class="game-card">
+        <div class="game-icon">🔴</div>
+        <div class="game-name">Puissance 4</div>
+      </div>
+      <div class="game-card">
+        <div class="game-icon">🐺</div>
+        <div class="game-name">Loup-Garou</div>
+      </div>
+      <div class="game-card">
+        <div class="game-icon">⚓</div>
+        <div class="game-name">Bataille Navale</div>
+      </div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
