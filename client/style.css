@@ -121,4 +121,4 @@ header button {
 .game-name {
   font-size: 14px;
   font-weight: 700;
-}
+}a.game-card { text-decoration: none; color: inherit; display: block; }
