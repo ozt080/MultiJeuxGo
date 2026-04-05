@@ -1,1 +1,279 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Quiz - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#10067;</div><h2>Quiz</h2><p style='color:#9b96b8;'>2 a 8 joueurs - Teste tes connaissances !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; }
+    .jeu-container { padding: 16px; max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin-bottom: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .scores { display: flex; justify-content: space-around; margin: 10px 0; }
+    .score-box { background: #1a1828; border-radius: 10px; padding: 10px 20px; border: 2px solid #2e2b45; }
+    .score-box.actif { border-color: #a67cff; background: #2a1f4a; }
+    .score-num { font-size: 28px; font-weight: 900; color: #a67cff; }
+    .score-nom { font-size: 12px; color: #9b96b8; }
+    .question-box { background: #1a1828; border-radius: 16px; padding: 20px; margin: 12px 0; border: 1px solid #2e2b45; }
+    .question-txt { font-size: 16px; font-weight: 700; margin-bottom: 16px; line-height: 1.4; }
+    .reponses { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .reponse-btn { padding: 14px 10px; border-radius: 10px; border: 2px solid #2e2b45; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .reponse-btn:hover { border-color: #7c5cbf; background: #1a1828; }
+    .reponse-btn.correcte { background: #1f3a2e; border-color: #4ecdc4; }
+    .reponse-btn.incorrecte { background: #3a1a1a; border-color: #ff6b6b; }
+    .reponse-btn:disabled { cursor: default; }
+    .status-bar { background: #1a1828; border-radius: 10px; padding: 12px; margin: 8px 0; font-weight: 700; font-size: 14px; border: 1px solid #2e2b45; }
+    .timer { font-size: 32px; font-weight: 900; color: #ffd93d; margin: 8px 0; }
+    .progress { font-size: 13px; color: #9b96b8; margin: 4px 0; }
+    .gagnant-msg { font-size: 22px; font-weight: 900; color: #ffd93d; margin: 10px 0; }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">❓</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">❓ Quiz</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">10 questions - Réponds plus vite que ton adversaire !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre avec un code</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <p style="color:#9b96b8;margin-bottom:8px;">Partage ce code avec ton ami :</p>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;margin-top:8px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="scores">
+        <div class="score-box" id="score-j1">
+          <div class="score-num" id="pts-j1">0</div>
+          <div class="score-nom" id="nom-j1">J1</div>
+        </div>
+        <div style="font-size:20px;font-weight:900;color:#9b96b8;padding-top:10px;">VS</div>
+        <div class="score-box" id="score-j2">
+          <div class="score-num" id="pts-j2">0</div>
+          <div class="score-nom" id="nom-j2">J2</div>
+        </div>
+      </div>
+      <div class="progress" id="progress">Question 1/10</div>
+      <div class="timer" id="timer">⏱ 15</div>
+      <div class="status-bar" id="status">Prépare-toi...</div>
+      <div class="question-box" id="question-box" style="display:none;">
+        <div class="question-txt" id="question-txt"></div>
+        <div class="reponses" id="reponses"></div>
+      </div>
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+
+    const QUESTIONS = [
+      { q: "Quelle est la capitale de la France ?", r: ["Paris", "Lyon", "Marseille", "Bordeaux"], c: 0 },
+      { q: "Combien font 7 x 8 ?", r: ["54", "56", "58", "52"], c: 1 },
+      { q: "Quel est le plus grand océan du monde ?", r: ["Atlantique", "Indien", "Arctique", "Pacifique"], c: 3 },
+      { q: "Quelle planète est la plus proche du soleil ?", r: ["Vénus", "Mercure", "Mars", "Terre"], c: 1 },
+      { q: "En quelle année a eu lieu la Révolution française ?", r: ["1789", "1799", "1776", "1804"], c: 0 },
+      { q: "Quel animal est le plus rapide du monde ?", r: ["Lion", "Guépard", "Faucon", "Cheval"], c: 1 },
+      { q: "Combien de côtés a un hexagone ?", r: ["5", "7", "6", "8"], c: 2 },
+      { q: "Quelle est la langue la plus parlée au monde ?", r: ["Anglais", "Espagnol", "Mandarin", "Hindi"], c: 2 },
+      { q: "Quel est le plus grand pays du monde ?", r: ["Canada", "Chine", "USA", "Russie"], c: 3 },
+      { q: "Qui a peint la Joconde ?", r: ["Picasso", "Da Vinci", "Monet", "Raphaël"], c: 1 }
+    ];
+
+    let codePartie = '';
+    let monPseudo = '';
+    let estJ1 = false;
+    let scoreJ1 = 0;
+    let scoreJ2 = 0;
+    let questionActuelle = 0;
+    let aRepondu = false;
+    let timer = null;
+    let tempsRestant = 15;
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'quiz' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      if (!code) { alert('Entre le code !'); return; }
+      estJ1 = false;
+      codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      scoreJ1 = 0; scoreJ2 = 0;
+      questionActuelle = 0;
+      setTimeout(() => afficherQuestion(0), 1000);
+    });
+
+    function afficherQuestion(index) {
+      if (index >= QUESTIONS.length) { finPartie(); return; }
+      aRepondu = false;
+      const q = QUESTIONS[index];
+      document.getElementById('progress').textContent = 'Question ' + (index + 1) + '/' + QUESTIONS.length;
+      document.getElementById('question-box').style.display = 'block';
+      document.getElementById('question-txt').textContent = q.q;
+      const reponsesDiv = document.getElementById('reponses');
+      reponsesDiv.innerHTML = '';
+      q.r.forEach((rep, i) => {
+        const btn = document.createElement('button');
+        btn.classList.add('reponse-btn');
+        btn.textContent = rep;
+        btn.onclick = () => repondre(i);
+        reponsesDiv.appendChild(btn);
+      });
+      document.getElementById('status').textContent = '⚡ Réponds vite !';
+      startTimer();
+    }
+
+    function startTimer() {
+      tempsRestant = 15;
+      document.getElementById('timer').textContent = '⏱ ' + tempsRestant;
+      if (timer) clearInterval(timer);
+      timer = setInterval(() => {
+        tempsRestant--;
+        document.getElementById('timer').textContent = '⏱ ' + tempsRestant;
+        if (tempsRestant <= 0) {
+          clearInterval(timer);
+          if (!aRepondu) {
+            aRepondu = true;
+            afficherBonneReponse();
+            socket.emit('jouer_coup', {
+              code: codePartie,
+              coup: { type: 'timeout', question: questionActuelle },
+              pseudo: monPseudo
+            });
+            setTimeout(() => questionSuivante(), 2000);
+          }
+        }
+      }, 1000);
+    }
+
+    function repondre(index) {
+      if (aRepondu) return;
+      aRepondu = true;
+      clearInterval(timer);
+      const q = QUESTIONS[questionActuelle];
+      const correct = index === q.c;
+      const btns = document.querySelectorAll('.reponse-btn');
+      btns.forEach(b => b.disabled = true);
+      btns[index].classList.add(correct ? 'correcte' : 'incorrecte');
+      btns[q.c].classList.add('correcte');
+      if (correct) {
+        if (estJ1) { scoreJ1 += tempsRestant; document.getElementById('pts-j1').textContent = scoreJ1; }
+        else { scoreJ2 += tempsRestant; document.getElementById('pts-j2').textContent = scoreJ2; }
+        document.getElementById('status').textContent = '✅ Bonne réponse ! +' + tempsRestant + ' pts';
+      } else {
+        document.getElementById('status').textContent = '❌ Mauvaise réponse !';
+      }
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'reponse', question: questionActuelle, correct: correct, points: correct ? tempsRestant : 0, joueur: estJ1 ? 1 : 2 },
+        pseudo: monPseudo
+      });
+      setTimeout(() => questionSuivante(), 2000);
+    }
+
+    function afficherBonneReponse() {
+      const q = QUESTIONS[questionActuelle];
+      const btns = document.querySelectorAll('.reponse-btn');
+      btns.forEach(b => b.disabled = true);
+      if (btns[q.c]) btns[q.c].classList.add('correcte');
+      document.getElementById('status').textContent = '⏰ Temps écoulé !';
+    }
+
+    function questionSuivante() {
+      questionActuelle++;
+      if (questionActuelle >= QUESTIONS.length) {
+        finPartie();
+      } else {
+        afficherQuestion(questionActuelle);
+      }
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'reponse') {
+        if (coup.joueur === 1 && !estJ1) {
+          scoreJ1 += coup.points;
+          document.getElementById('pts-j1').textContent = scoreJ1;
+        } else if (coup.joueur === 2 && estJ1) {
+          scoreJ2 += coup.points;
+          document.getElementById('pts-j2').textContent = scoreJ2;
+        }
+      }
+    });
+
+    function finPartie() {
+      if (timer) clearInterval(timer);
+      document.getElementById('question-box').style.display = 'none';
+      document.getElementById('timer').textContent = '';
+      const nomJ1 = document.getElementById('nom-j1').textContent;
+      const nomJ2 = document.getElementById('nom-j2').textContent;
+      let msg = '';
+      if (scoreJ1 > scoreJ2) msg = '🏆 ' + nomJ1 + ' a gagné ! (' + scoreJ1 + ' vs ' + scoreJ2 + ' pts)';
+      else if (scoreJ2 > scoreJ1) msg = '🏆 ' + nomJ2 + ' a gagné ! (' + scoreJ2 + ' vs ' + scoreJ1 + ' pts)';
+      else msg = '🤝 Égalité ! (' + scoreJ1 + ' pts chacun)';
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = msg;
+      document.getElementById('status').textContent = '🎉 Quiz terminé !';
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+    }
+
+    function rejouer() {
+      scoreJ1 = 0; scoreJ2 = 0;
+      questionActuelle = 0;
+      document.getElementById('pts-j1').textContent = '0';
+      document.getElementById('pts-j2').textContent = '0';
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      document.getElementById('timer').textContent = '⏱ 15';
+      afficherQuestion(0);
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
