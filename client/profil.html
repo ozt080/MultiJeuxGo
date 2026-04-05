@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profil - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .profil-box { max-width:500px; margin:40px auto; background:#1a1828; border-radius:16px; padding:32px; border:1px solid #2e2b45; }
+    .avatar { width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#7c5cbf,#a67cff); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700; margin:0 auto 16px; color:white; }
+    .ami-item { display:flex; align-items:center; justify-content:space-between; padding:10px; background:#0f0e17; border-radius:8px; margin-bottom:8px; }
+    .add-ami { display:flex; gap:8px; margin-top:16px; }
+    .add-ami input { flex:1; padding:10px; border-radius:8px; border:1px solid #7c5cbf; background:#0f0e17; color:white; }
+    .add-ami button { padding:10px 16px; border-radius:8px; border:none; background:#7c5cbf; color:white; font-weight:700; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <button onclick="window.location.href='index.html'" style="padding:8px 16px;border-radius:50px;border:none;background:#7c5cbf;color:white;font-weight:700;cursor:pointer;">Retour</button>
+  </header>
+  <div class="profil-box">
+    <div class="avatar" id="avatar">?</div>
+    <h2 style="text-align:center;" id="pseudo-affiche">Chargement...</h2>
+    <p style="text-align:center;color:#9b96b8;" id="email-affiche"></p>
+    <div style="text-align:center;margin-top:16px;">
+      <button onclick="deconnexion()" style="padding:10px 24px;border-radius:50px;border:none;background:#ff6b6b;color:white;font-weight:700;cursor:pointer;">Se deconnecter</button>
+    </div>
+    <div style="margin-top:24px;">
+      <h3 style="color:#a67cff;margin-bottom:12px;">Mes amis</h3>
+      <div id="liste-amis"><p style="color:#9b96b8;">Aucun ami pour linstant</p></div>
+      <div class="add-ami">
+        <input id="ami-email" type="email" placeholder="Email de ton ami"/>
+        <button onclick="ajouterAmi()">Ajouter</button>
+      </div>
+      <p id="ami-msg" style="color:#4ecdc4;font-size:13px;margin-top:8px;"></p>
+    </div>
+  </div>
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+    import { doc, getDoc, updateDoc, arrayUnion, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+    let currentUser = null;
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return; }
+      currentUser = user;
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        document.getElementById('pseudo-affiche').textContent = data.pseudo || 'Joueur';
+        document.getElementById('email-affiche').textContent = user.email;
+        document.getElementById('avatar').textContent = (data.pseudo || 'J')[0].toUpperCase();
+        if (data.amis && data.amis.length > 0) {
+          const liste = document.getElementById('liste-amis');
+          liste.innerHTML = '';
+          data.amis.forEach(ami => {
+            liste.innerHTML += '<div class="ami-item"><span>' + ami + '</span></div>';
+          });
+        }
+      }
+    });
+    window.deconnexion = async function() {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    };
+    window.ajouterAmi = async function() {
+      const email = document.getElementById('ami-email').value;
+      const msg = document.getElementById('ami-msg');
+      if (!email) return;
+      try {
+        const q = query(collection(db, 'users'), where('email', '==', email));
+        const snap = await getDocs(q);
+        if (snap.empty) { msg.style.color = '#ff6b6b'; msg.textContent = 'Utilisateur introuvable !'; return; }
+        await updateDoc(doc(db, 'users', currentUser.uid), { amis: arrayUnion(email) });
+        msg.style.color = '#4ecdc4';
+        msg.textContent = 'Ami ajoute !';
+        document.getElementById('ami-email').value = '';
+      } catch(e) { msg.style.color = '#ff6b6b'; msg.textContent = 'Erreur !'; }
+    };
+  </script>
+</body>
+</html>
