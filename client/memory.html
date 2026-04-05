@@ -1,1 +1,320 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Memory - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#129504;</div><h2>Memory</h2><p style='color:#9b96b8;'>2 joueurs - Retrouve les paires !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memory - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; }
+    .jeu-container { padding: 16px; max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin-bottom: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .lobby-box button:hover { background: #a67cff; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .scores { display: flex; justify-content: space-around; margin: 10px 0; }
+    .score-box { background: #1a1828; border-radius: 10px; padding: 10px 20px; border: 2px solid #2e2b45; }
+    .score-box.actif { border-color: #a67cff; background: #2a1f4a; }
+    .score-num { font-size: 28px; font-weight: 900; color: #a67cff; }
+    .score-nom { font-size: 12px; color: #9b96b8; }
+    .status-bar { background: #1a1828; border-radius: 10px; padding: 12px; margin: 8px 0; font-weight: 700; font-size: 14px; border: 1px solid #2e2b45; }
+    .grille-memory { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+    .carte { aspect-ratio: 1; border-radius: 10px; background: #2e2b45; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; transition: all 0.3s; border: 2px solid #3e3b55; user-select: none; }
+    .carte:hover { transform: scale(1.05); border-color: #7c5cbf; }
+    .carte.retournee { background: #1a1828; border-color: #a67cff; }
+    .carte.trouvee { background: #1f3a2e; border-color: #4ecdc4; cursor: default; }
+    .carte.cachee { font-size: 0; background: #2e2b45; }
+    .gagnant-msg { font-size: 22px; font-weight: 900; color: #ffd93d; margin: 10px 0; }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">🧠</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">🧠 Memory</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Retrouve les paires avant ton adversaire !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre avec un code</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <p style="color:#9b96b8;margin-bottom:8px;">Partage ce code avec ton ami :</p>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;margin-top:8px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="scores">
+        <div class="score-box" id="score-j1">
+          <div class="score-num" id="pts-j1">0</div>
+          <div class="score-nom" id="nom-j1">Joueur 1</div>
+        </div>
+        <div style="font-size:20px;font-weight:900;color:#9b96b8;padding-top:10px;">VS</div>
+        <div class="score-box" id="score-j2">
+          <div class="score-num" id="pts-j2">0</div>
+          <div class="score-nom" id="nom-j2">Joueur 2</div>
+        </div>
+      </div>
+      <div class="status-bar" id="status">En attente...</div>
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <div class="grille-memory" id="grille"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    const EMOJIS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐸','🐵','🐔','🐧'];
+    let cartes = [];
+    let retournees = [];
+    let trouvees = 0;
+    let monTour = false;
+    let codePartie = '';
+    let monPseudo = '';
+    let estJ1 = false;
+    let scoreJ1 = 0;
+    let scoreJ2 = 0;
+    let enVerification = false;
+
+    function melangerCartes() {
+      const paires = [...EMOJIS, ...EMOJIS];
+      for (let i = paires.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [paires[i], paires[j]] = [paires[j], paires[i]];
+      }
+      return paires;
+    }
+
+    function creerGrille(cartesData) {
+      const grille = document.getElementById('grille');
+      grille.innerHTML = '';
+      cartes = cartesData;
+      retournees = [];
+      trouvees = 0;
+      cartesData.forEach((emoji, i) => {
+        const div = document.createElement('div');
+        div.classList.add('carte', 'cachee');
+        div.dataset.index = i;
+        div.dataset.emoji = emoji;
+        div.addEventListener('click', () => cliquerCarte(i));
+        grille.appendChild(div);
+      });
+    }
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'memory' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      if (!code) { alert('Entre le code !'); return; }
+      estJ1 = false;
+      codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      scoreJ1 = 0; scoreJ2 = 0;
+      document.getElementById('pts-j1').textContent = '0';
+      document.getElementById('pts-j2').textContent = '0';
+      if (estJ1) {
+        const cartesData = melangerCartes();
+        creerGrille(cartesData);
+        monTour = true;
+        document.getElementById('status').textContent = '🧠 Ton tour ! Retourne 2 cartes';
+        document.getElementById('score-j1').classList.add('actif');
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'init', cartes: cartesData },
+          pseudo: monPseudo
+        });
+      } else {
+        monTour = false;
+        document.getElementById('status').textContent = '⏳ ' + data.joueurs[0] + ' commence...';
+        document.getElementById('score-j1').classList.add('actif');
+      }
+    });
+
+    function cliquerCarte(index) {
+      if (!monTour || enVerification) return;
+      const divCartes = document.querySelectorAll('.carte');
+      const carte = divCartes[index];
+      if (carte.classList.contains('trouvee') || carte.classList.contains('retournee')) return;
+      if (retournees.length >= 2) return;
+      carte.classList.remove('cachee');
+      carte.classList.add('retournee');
+      carte.textContent = cartes[index];
+      retournees.push(index);
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'retourner', index: index, emoji: cartes[index] },
+        pseudo: monPseudo
+      });
+      if (retournees.length === 2) {
+        enVerification = true;
+        setTimeout(() => verifierPaire(), 1000);
+      }
+    }
+
+    function verifierPaire() {
+      const divCartes = document.querySelectorAll('.carte');
+      const [i1, i2] = retournees;
+      if (cartes[i1] === cartes[i2]) {
+        divCartes[i1].classList.remove('retournee');
+        divCartes[i2].classList.remove('retournee');
+        divCartes[i1].classList.add('trouvee');
+        divCartes[i2].classList.add('trouvee');
+        trouvees += 2;
+        if (estJ1) { scoreJ1++; document.getElementById('pts-j1').textContent = scoreJ1; }
+        else { scoreJ2++; document.getElementById('pts-j2').textContent = scoreJ2; }
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'paire', index1: i1, index2: i2, joueur: estJ1 ? 1 : 2 },
+          pseudo: monPseudo
+        });
+        if (trouvees === cartes.length) {
+          finPartie();
+        } else {
+          document.getElementById('status').textContent = '🎉 Paire trouvée ! Continue !';
+        }
+      } else {
+        divCartes[i1].classList.remove('retournee');
+        divCartes[i2].classList.remove('retournee');
+        divCartes[i1].classList.add('cachee');
+        divCartes[i1].textContent = '';
+        divCartes[i2].classList.add('cachee');
+        divCartes[i2].textContent = '';
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'rater', index1: i1, index2: i2 },
+          pseudo: monPseudo
+        });
+        monTour = false;
+        const adversaire = estJ1 ? document.getElementById('nom-j2').textContent : document.getElementById('nom-j1').textContent;
+        document.getElementById('status').textContent = '⏳ Tour de ' + adversaire + '...';
+        document.getElementById('score-j1').classList.toggle('actif');
+        document.getElementById('score-j2').classList.toggle('actif');
+      }
+      retournees = [];
+      enVerification = false;
+    }
+
+    socket.on('coup_recu', (data) => {
+      const divCartes = document.querySelectorAll('.carte');
+      const coup = data.coup;
+      if (coup.type === 'init') {
+        creerGrille(coup.cartes);
+      } else if (coup.type === 'retourner') {
+        if (divCartes[coup.index]) {
+          divCartes[coup.index].classList.remove('cachee');
+          divCartes[coup.index].classList.add('retournee');
+          divCartes[coup.index].textContent = coup.emoji;
+        }
+      } else if (coup.type === 'paire') {
+        if (divCartes[coup.index1]) {
+          divCartes[coup.index1].classList.remove('retournee');
+          divCartes[coup.index1].classList.add('trouvee');
+        }
+        if (divCartes[coup.index2]) {
+          divCartes[coup.index2].classList.remove('retournee');
+          divCartes[coup.index2].classList.add('trouvee');
+        }
+        trouvees += 2;
+        if (coup.joueur === 1) { scoreJ1++; document.getElementById('pts-j1').textContent = scoreJ1; }
+        else { scoreJ2++; document.getElementById('pts-j2').textContent = scoreJ2; }
+        if (trouvees === 32) finPartie();
+      } else if (coup.type === 'rater') {
+        setTimeout(() => {
+          if (divCartes[coup.index1]) {
+            divCartes[coup.index1].classList.remove('retournee');
+            divCartes[coup.index1].classList.add('cachee');
+            divCartes[coup.index1].textContent = '';
+          }
+          if (divCartes[coup.index2]) {
+            divCartes[coup.index2].classList.remove('retournee');
+            divCartes[coup.index2].classList.add('cachee');
+            divCartes[coup.index2].textContent = '';
+          }
+          monTour = true;
+          document.getElementById('status').textContent = '🧠 Ton tour ! Retourne 2 cartes';
+          document.getElementById('score-j1').classList.toggle('actif');
+          document.getElementById('score-j2').classList.toggle('actif');
+        }, 800);
+      }
+    });
+
+    function finPartie() {
+      const nomJ1 = document.getElementById('nom-j1').textContent;
+      const nomJ2 = document.getElementById('nom-j2').textContent;
+      let msg = '';
+      if (scoreJ1 > scoreJ2) msg = '🏆 ' + nomJ1 + ' a gagné ! (' + scoreJ1 + ' vs ' + scoreJ2 + ')';
+      else if (scoreJ2 > scoreJ1) msg = '🏆 ' + nomJ2 + ' a gagné ! (' + scoreJ2 + ' vs ' + scoreJ1 + ')';
+      else msg = '🤝 Égalité ! (' + scoreJ1 + ' vs ' + scoreJ2 + ')';
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = msg;
+      document.getElementById('status').textContent = '🎉 Partie terminée !';
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+      monTour = false;
+    }
+
+    function rejouer() {
+      scoreJ1 = 0; scoreJ2 = 0;
+      trouvees = 0;
+      document.getElementById('pts-j1').textContent = '0';
+      document.getElementById('pts-j2').textContent = '0';
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      if (estJ1) {
+        const cartesData = melangerCartes();
+        creerGrille(cartesData);
+        monTour = true;
+        document.getElementById('status').textContent = '🧠 Ton tour !';
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'init', cartes: cartesData },
+          pseudo: monPseudo
+        });
+      } else {
+        monTour = false;
+        document.getElementById('status').textContent = '⏳ En attente...';
+      }
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
