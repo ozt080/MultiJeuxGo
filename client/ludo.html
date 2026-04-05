@@ -1,1 +1,405 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Ludo - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#127922;</div><h2>Ludo</h2><p style='color:#9b96b8;'>2 a 4 joueurs - Le jeu de plateau classique !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ludo - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; }
+    .jeu-container { padding: 16px; max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin-bottom: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .status-bar { background: #1a1828; border-radius: 10px; padding: 12px; margin: 8px 0; font-weight: 700; font-size: 14px; border: 1px solid #2e2b45; }
+    .joueurs-bar { display: flex; justify-content: space-around; margin: 10px 0; }
+    .joueur-info { background: #1a1828; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; border: 2px solid #2e2b45; }
+    .joueur-info.actif { border-color: #a67cff; background: #2a1f4a; }
+    .de-box { background: #1a1828; border-radius: 16px; padding: 20px; margin: 12px 0; border: 1px solid #2e2b45; }
+    .de { font-size: 64px; cursor: pointer; transition: transform 0.3s; display: inline-block; }
+    .de:hover { transform: scale(1.1); }
+    .de.lance { animation: lancerDe 0.5s ease; }
+    @keyframes lancerDe { 0%{transform:rotate(0deg) scale(1);} 50%{transform:rotate(180deg) scale(1.3);} 100%{transform:rotate(360deg) scale(1);} }
+    .plateau { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+    .zone { background: #1a1828; border-radius: 12px; padding: 16px; border: 2px solid #2e2b45; }
+    .zone h4 { font-size: 12px; color: #9b96b8; margin-bottom: 8px; }
+    .pions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 30px; }
+    .pion { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: transform 0.2s; border: 2px solid rgba(255,255,255,0.2); }
+    .pion:hover { transform: scale(1.2); }
+    .pion.selectionne { border-color: #ffd93d; transform: scale(1.3); }
+    .position-txt { font-size: 11px; color: #9b96b8; margin-top: 4px; }
+    .gagnant-msg { font-size: 22px; font-weight: 900; color: #ffd93d; margin: 10px 0; }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
+    .piste { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 8px 0; }
+    .case-piste { width: 100%; aspect-ratio: 1; border-radius: 6px; background: #2e2b45; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 1px solid #3e3b55; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">🎲</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">🎲 Ludo</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Lance le dé et déplace tes pions jusqu'à la maison !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre avec un code</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <p style="color:#9b96b8;margin-bottom:8px;">Partage ce code avec ton ami :</p>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;margin-top:8px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="joueurs-bar">
+        <div class="joueur-info" id="info-j1">🔴 <span id="nom-j1">J1</span></div>
+        <div style="font-weight:900;color:#9b96b8;">VS</div>
+        <div class="joueur-info" id="info-j2">🔵 <span id="nom-j2">J2</span></div>
+      </div>
+      <div class="status-bar" id="status">En attente...</div>
+
+      <div class="de-box">
+        <div class="de" id="de" onclick="lancerDe()">🎲</div>
+        <div style="font-size:13px;color:#9b96b8;margin-top:8px;" id="valeur-de">Clique pour lancer !</div>
+      </div>
+
+      <div class="plateau">
+        <div class="zone" style="border-color:#ff6b6b;">
+          <h4>🔴 Base Rouge</h4>
+          <div class="pions" id="base-rouge"></div>
+        </div>
+        <div class="zone">
+          <h4>🛣️ Piste</h4>
+          <div id="piste-affichage" style="font-size:12px;color:#9b96b8;">Cases 1-52</div>
+        </div>
+        <div class="zone" style="border-color:#4ecdc4;">
+          <h4>🔵 Base Bleue</h4>
+          <div class="pions" id="base-bleu"></div>
+        </div>
+        <div class="zone" style="border-color:#ff6b6b;">
+          <h4>🏠 Maison Rouge</h4>
+          <div class="pions" id="maison-rouge"></div>
+        </div>
+        <div class="zone" style="border-color:#ffd93d;">
+          <h4>🎯 Piste</h4>
+          <div class="piste" id="piste"></div>
+        </div>
+        <div class="zone" style="border-color:#4ecdc4;">
+          <h4>🏠 Maison Bleue</h4>
+          <div class="pions" id="maison-bleu"></div>
+        </div>
+      </div>
+
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    let codePartie = '';
+    let monPseudo = '';
+    let estJ1 = false;
+    let monTour = false;
+    let deValeur = 0;
+    let aLance = false;
+
+    // Positions des pions : -1 = base, 0-51 = piste, 52-56 = couloir maison
+    let pionsRouge = [-1, -1, -1, -1];
+    let pionsBLeu = [-1, -1, -1, -1];
+
+    const DE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'ludo' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      if (!code) { alert('Entre le code !'); return; }
+      estJ1 = false;
+      codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      initialiserJeu();
+      if (estJ1) {
+        monTour = true;
+        document.getElementById('status').textContent = '🔴 Ton tour ! Lance le dé';
+        document.getElementById('info-j1').classList.add('actif');
+      } else {
+        monTour = false;
+        document.getElementById('status').textContent = '🔴 ' + data.joueurs[0] + ' commence...';
+        document.getElementById('info-j1').classList.add('actif');
+      }
+    });
+
+    function initialiserJeu() {
+      pionsRouge = [-1, -1, -1, -1];
+      pionsBLeu = [-1, -1, -1, -1];
+      aLance = false;
+      afficherPions();
+      afficherPiste();
+    }
+
+    function afficherPiste() {
+      const piste = document.getElementById('piste');
+      piste.innerHTML = '';
+      const tousLesPions = [
+        ...pionsRouge.map((p, i) => ({ pos: p, couleur: 'rouge', index: i })),
+        ...pionsBLeu.map((p, i) => ({ pos: p, couleur: 'bleu', index: i }))
+      ].filter(p => p.pos >= 0 && p.pos < 52);
+
+      for (let i = 0; i < 12; i++) {
+        const div = document.createElement('div');
+        div.classList.add('case-piste');
+        const pionsIci = tousLesPions.filter(p => p.pos % 12 === i);
+        pionsIci.forEach(p => {
+          div.textContent += p.couleur === 'rouge' ? '🔴' : '🔵';
+        });
+        if (!div.textContent) div.textContent = (i + 1);
+        piste.appendChild(div);
+      }
+    }
+
+    function afficherPions() {
+      const baseRouge = document.getElementById('base-rouge');
+      const baseBLeu = document.getElementById('base-bleu');
+      const maisonRouge = document.getElementById('maison-rouge');
+      const maisonBLeu = document.getElementById('maison-bleu');
+
+      baseRouge.innerHTML = '';
+      baseBLeu.innerHTML = '';
+      maisonRouge.innerHTML = '';
+      maisonBLeu.innerHTML = '';
+
+      pionsRouge.forEach((pos, i) => {
+        const div = document.createElement('div');
+        div.classList.add('pion');
+        div.style.background = '#ff6b6b';
+        div.textContent = '🔴';
+        div.title = 'Pion ' + (i+1);
+        if (pos === -1) {
+          baseRouge.appendChild(div);
+          if (monTour && estJ1 && aLance && deValeur === 6) {
+            div.classList.add('selectionne');
+            div.onclick = () => sortiePion('rouge', i);
+          }
+        } else if (pos >= 52) {
+          maisonRouge.appendChild(div);
+        } else {
+          div.style.position = 'absolute';
+          if (monTour && estJ1 && aLance) {
+            div.classList.add('selectionne');
+            div.onclick = () => deplacerPion('rouge', i);
+          }
+        }
+      });
+
+      pionsBLeu.forEach((pos, i) => {
+        const div = document.createElement('div');
+        div.classList.add('pion');
+        div.style.background = '#4ecdc4';
+        div.textContent = '🔵';
+        if (pos === -1) {
+          baseBLeu.appendChild(div);
+          if (monTour && !estJ1 && aLance && deValeur === 6) {
+            div.classList.add('selectionne');
+            div.onclick = () => sortiePion('bleu', i);
+          }
+        } else if (pos >= 52) {
+          maisonBLeu.appendChild(div);
+        }
+      });
+
+      afficherPiste();
+    }
+
+    function lancerDe() {
+      if (!monTour || aLance) return;
+      const de = document.getElementById('de');
+      de.classList.add('lance');
+      setTimeout(() => de.classList.remove('lance'), 500);
+      deValeur = Math.floor(Math.random() * 6) + 1;
+      de.textContent = DE_FACES[deValeur - 1];
+      document.getElementById('valeur-de').textContent = 'Tu as obtenu : ' + deValeur;
+      aLance = true;
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'lancer', valeur: deValeur },
+        pseudo: monPseudo
+      });
+      verifierMouvements();
+    }
+
+    function verifierMouvements() {
+      const mesPions = estJ1 ? pionsRouge : pionsBLeu;
+      const couleur = estJ1 ? 'rouge' : 'bleu';
+      const pionsSurPiste = mesPions.filter(p => p >= 0 && p < 52);
+      const pionsEnBase = mesPions.filter(p => p === -1);
+
+      if (pionsSurPiste.length === 0 && (deValeur !== 6 || pionsEnBase.length === 0)) {
+        document.getElementById('status').textContent = 'Pas de mouvement possible ! Tour suivant...';
+        setTimeout(() => finTour(), 1500);
+        return;
+      }
+
+      if (deValeur === 6 && pionsEnBase.length > 0) {
+        document.getElementById('status').textContent = '🎉 6 ! Tu peux sortir un pion ou avancer !';
+      } else {
+        document.getElementById('status').textContent = 'Choisis un pion à déplacer !';
+      }
+      afficherPions();
+    }
+
+    function sortiePion(couleur, index) {
+      if (couleur === 'rouge') pionsRouge[index] = 0;
+      else pionsBLeu[index] = 0;
+      aLance = false;
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'sortie', couleur: couleur, index: index },
+        pseudo: monPseudo
+      });
+      afficherPions();
+      if (deValeur === 6) {
+        aLance = false;
+        document.getElementById('status').textContent = '🎉 Relance le dé !';
+      } else {
+        finTour();
+      }
+    }
+
+    function deplacerPion(couleur, index) {
+      if (couleur === 'rouge') {
+        pionsRouge[index] = Math.min(pionsRouge[index] + deValeur, 56);
+        if (pionsRouge[index] >= 56) {
+          document.getElementById('status').textContent = '🏆 Pion arrivé à la maison !';
+          verifierVictoire('rouge');
+        }
+      } else {
+        pionsBLeu[index] = Math.min(pionsBLeu[index] + deValeur, 56);
+        if (pionsBLeu[index] >= 56) {
+          document.getElementById('status').textContent = '🏆 Pion arrivé à la maison !';
+          verifierVictoire('bleu');
+        }
+      }
+      aLance = false;
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'deplacement', couleur: couleur, index: index, nouvellePos: couleur === 'rouge' ? pionsRouge[index] : pionsBLeu[index] },
+        pseudo: monPseudo
+      });
+      afficherPions();
+      if (deValeur !== 6) finTour();
+      else {
+        document.getElementById('status').textContent = '🎉 6 ! Relance le dé !';
+        aLance = false;
+      }
+    }
+
+    function verifierVictoire(couleur) {
+      const pions = couleur === 'rouge' ? pionsRouge : pionsBLeu;
+      if (pions.every(p => p >= 52)) {
+        const gagnant = couleur === 'rouge' ? document.getElementById('nom-j1').textContent : document.getElementById('nom-j2').textContent;
+        document.getElementById('gagnant-msg').style.display = 'block';
+        document.getElementById('gagnant-msg').textContent = '🏆 ' + gagnant + ' a gagné !';
+        document.getElementById('btn-rejouer').style.display = 'inline-block';
+        monTour = false;
+      }
+    }
+
+    function finTour() {
+      monTour = false;
+      aLance = false;
+      document.getElementById('de').textContent = '🎲';
+      document.getElementById('valeur-de').textContent = 'En attente...';
+      const adversaire = estJ1 ? document.getElementById('nom-j2').textContent : document.getElementById('nom-j1').textContent;
+      document.getElementById('status').textContent = '⏳ Tour de ' + adversaire + '...';
+      document.getElementById('info-j1').classList.toggle('actif');
+      document.getElementById('info-j2').classList.toggle('actif');
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'fin_tour' },
+        pseudo: monPseudo
+      });
+      afficherPions();
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'lancer') {
+        document.getElementById('de').textContent = DE_FACES[coup.valeur - 1];
+        document.getElementById('valeur-de').textContent = data.pseudo + ' a obtenu : ' + coup.valeur;
+        deValeur = coup.valeur;
+      } else if (coup.type === 'sortie') {
+        if (coup.couleur === 'rouge') pionsRouge[coup.index] = 0;
+        else pionsBLeu[coup.index] = 0;
+        afficherPions();
+      } else if (coup.type === 'deplacement') {
+        if (coup.couleur === 'rouge') pionsRouge[coup.index] = coup.nouvellePos;
+        else pionsBLeu[coup.index] = coup.nouvellePos;
+        afficherPions();
+      } else if (coup.type === 'fin_tour') {
+        monTour = true;
+        aLance = false;
+        document.getElementById('de').textContent = '🎲';
+        document.getElementById('valeur-de').textContent = 'Clique pour lancer !';
+        document.getElementById('status').textContent = (estJ1 ? '🔴' : '🔵') + ' Ton tour ! Lance le dé';
+        document.getElementById('info-j1').classList.toggle('actif');
+        document.getElementById('info-j2').classList.toggle('actif');
+        afficherPions();
+      }
+    });
+
+    function rejouer() {
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      initialiserJeu();
+      if (estJ1) {
+        monTour = true;
+        document.getElementById('status').textContent = '🔴 Ton tour ! Lance le dé';
+      } else {
+        monTour = false;
+        document.getElementById('status').textContent = '⏳ En attente...';
+      }
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
