@@ -7,64 +7,34 @@
   <link rel="stylesheet" href="style.css"/>
   <style>
     body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; }
-    .jeu-container { padding: 16px; max-width: 480px; margin: 0 auto; text-align: center; }
+    .jeu-container { padding: 16px; max-width: 500px; margin: 0 auto; text-align: center; }
     .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin-bottom: 16px; border: 1px solid #2e2b45; }
     .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
     .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
     .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
     .status-bar { background: #1a1828; border-radius: 10px; padding: 10px; margin: 8px 0; font-weight: 700; font-size: 13px; border: 1px solid #2e2b45; }
-    .joueurs-bar { display: flex; justify-content: space-around; margin: 8px 0; }
+    .joueurs-bar { display: flex; justify-content: space-around; margin: 8px 0; flex-wrap: wrap; gap: 6px; }
     .joueur-info { background: #1a1828; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 700; border: 2px solid #2e2b45; }
-    .joueur-info.actif { border-color: #ffd93d; }
-
-    /* PLATEAU LUDO */
-    .plateau-ludo {
-      display: grid;
-      grid-template-columns: repeat(11, 1fr);
-      grid-template-rows: repeat(11, 1fr);
-      gap: 1px;
-      background: #333;
-      border-radius: 12px;
-      overflow: hidden;
-      margin: 10px 0;
-      aspect-ratio: 1;
-      width: 100%;
-    }
-    .cell-ludo {
-      background: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      position: relative;
-      cursor: pointer;
-    }
-    .cell-ludo:hover { opacity: 0.8; }
-    .cell-ludo.rouge { background: #e74c3c; }
-    .cell-ludo.bleu { background: #3498db; }
-    .cell-ludo.vert { background: #2ecc71; }
-    .cell-ludo.jaune { background: #f1c40f; }
-    .cell-ludo.blanc { background: #ecf0f1; }
-    .cell-ludo.centre { background: linear-gradient(135deg, #e74c3c 25%, #f1c40f 25%, #f1c40f 50%, #2ecc71 50%, #2ecc71 75%, #3498db 75%); }
-    .cell-ludo.safe { background: #a8e6cf; }
-    .cell-ludo.fleche-rouge { background: #ffcccc; }
-    .cell-ludo.fleche-bleu { background: #cce0ff; }
-    .cell-ludo.fleche-vert { background: #ccffdd; }
-    .cell-ludo.fleche-jaune { background: #fff9cc; }
-    .pion-svg { width: 70%; height: 70%; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.3); }
-    .base-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; }
-    .pion-base { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s; }
-    .pion-base:hover { transform: scale(1.1); }
-    .pion-base.selectionne { border-color: #ffd93d; transform: scale(1.15); }
-
-    .de-container { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 10px 0; }
-    .de-btn { font-size: 48px; cursor: pointer; transition: transform 0.2s; background: none; border: none; }
+    .joueur-info.actif { border-color: #ffd93d; background: #2a2010; }
+    .couleur-choix { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+    .couleur-btn { width: 50px; height: 50px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.2s; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+    .couleur-btn:hover { transform: scale(1.1); }
+    .couleur-btn.choisi { border-color: white; transform: scale(1.15); }
+    .couleur-btn.pris { opacity: 0.3; cursor: not-allowed; }
+    .nb-joueurs-choix { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
+    .nb-btn { padding: 8px 16px; border-radius: 50px; border: 2px solid #2e2b45; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .nb-btn.actif { border-color: #a67cff; background: #2a1f4a; color: #a67cff; }
+    .de-container { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 8px 0; }
+    .de-btn { font-size: 44px; cursor: pointer; transition: transform 0.2s; background: none; border: none; }
     .de-btn:hover { transform: scale(1.1); }
     .de-btn.lance { animation: spinDe 0.4s ease; }
     @keyframes spinDe { 0%{transform:rotate(0) scale(1);} 50%{transform:rotate(180deg) scale(1.2);} 100%{transform:rotate(360deg) scale(1);} }
-    .de-info { font-size: 14px; color: #9b96b8; font-weight: 700; }
+    .de-info { font-size: 13px; color: #9b96b8; font-weight: 700; }
     .gagnant-msg { font-size: 20px; font-weight: 900; color: #ffd93d; margin: 10px 0; }
     .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 8px; }
+    #plateau-canvas { width: 100%; border-radius: 12px; cursor: pointer; display: block; }
+    .attente-joueurs { background: #1a1828; border-radius: 12px; padding: 16px; margin: 8px 0; border: 1px solid #2e2b45; }
+    .joueur-connecte { display: flex; align-items: center; gap: 8px; padding: 8px; background: #0f0e17; border-radius: 8px; margin: 6px 0; }
   </style>
 </head>
 <body>
@@ -75,42 +45,59 @@
 
   <div class="jeu-container">
 
-    <div id="lobby">
+    <!-- LOBBY CRÉATION -->
+    <div id="lobby-creer">
       <div class="lobby-box">
         <h2 style="color:#a67cff;margin-bottom:16px;">🎲 Ludo</h2>
-        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Lance le dé et ramène tous tes pions à la maison !</p>
-        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
-        <button onclick="creerPartie()">🚀 Créer une partie</button>
-        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
-        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
-        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre avec un code</button>
+        <input id="pseudo-creer" type="text" placeholder="Ton pseudo"/>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:8px;">Nombre de joueurs :</p>
+        <div class="nb-joueurs-choix">
+          <button class="nb-btn actif" onclick="setNbJoueurs(2,this)">2 joueurs</button>
+          <button class="nb-btn" onclick="setNbJoueurs(3,this)">3 joueurs</button>
+          <button class="nb-btn" onclick="setNbJoueurs(4,this)">4 joueurs</button>
+        </div>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:8px;">Choisis ta couleur :</p>
+        <div class="couleur-choix" id="couleurs-creer">
+          <div class="couleur-btn" style="background:#e74c3c;" onclick="choisirCouleur('rouge',this)" title="Rouge">🔴</div>
+          <div class="couleur-btn" style="background:#3498db;" onclick="choisirCouleur('bleu',this)" title="Bleu">🔵</div>
+          <div class="couleur-btn" style="background:#2ecc71;" onclick="choisirCouleur('vert',this)" title="Vert">🟢</div>
+          <div class="couleur-btn" style="background:#f1c40f;" onclick="choisirCouleur('jaune',this)" title="Jaune">🟡</div>
+        </div>
+        <button onclick="creerPartie()" style="margin-top:10px;">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou rejoindre —</div>
+        <input id="pseudo-rejoindre" type="text" placeholder="Ton pseudo"/>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:8px;">Choisis ta couleur :</p>
+        <div class="couleur-choix" id="couleurs-rejoindre">
+          <div class="couleur-btn" style="background:#e74c3c;" onclick="choisirCouleurRejoindre('rouge',this)">🔴</div>
+          <div class="couleur-btn" style="background:#3498db;" onclick="choisirCouleurRejoindre('bleu',this)">🔵</div>
+          <div class="couleur-btn" style="background:#2ecc71;" onclick="choisirCouleurRejoindre('vert',this)">🟢</div>
+          <div class="couleur-btn" style="background:#f1c40f;" onclick="choisirCouleurRejoindre('jaune',this)">🟡</div>
+        </div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;margin-top:8px;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre</button>
       </div>
     </div>
 
+    <!-- ATTENTE JOUEURS -->
     <div id="attente" style="display:none;">
       <div class="lobby-box">
         <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
-        <p style="color:#9b96b8;margin-bottom:8px;">Partage ce code :</p>
         <div class="code-display" id="code-affiche">----</div>
-        <p style="color:#9b96b8;font-size:13px;">⏳ En attente...</p>
+        <p style="color:#9b96b8;font-size:13px;">Partage ce code ! (<span id="nb-connectes">1</span>/<span id="nb-total">2</span> joueurs)</p>
+        <div id="liste-connectes" style="margin-top:12px;"></div>
+        <button id="btn-lancer-partie" onclick="lancerPartie()" style="display:none;margin-top:12px;">▶️ Lancer la partie !</button>
       </div>
     </div>
 
+    <!-- JEU -->
     <div id="jeu" style="display:none;">
-      <div class="joueurs-bar">
-        <div class="joueur-info" id="info-j1">🔴 <span id="nom-j1">J1</span></div>
-        <div style="font-weight:900;color:#9b96b8;font-size:12px;">VS</div>
-        <div class="joueur-info" id="info-j2">🔵 <span id="nom-j2">J2</span></div>
-      </div>
+      <div class="joueurs-bar" id="joueurs-bar"></div>
       <div class="status-bar" id="status">En attente...</div>
-
       <div class="de-container">
         <button class="de-btn" id="de" onclick="lancerDe()">🎲</button>
         <div class="de-info" id="de-info">Lance le dé !</div>
       </div>
-
-      <canvas id="plateau-canvas" width="440" height="440" style="width:100%;border-radius:12px;cursor:pointer;"></canvas>
-
+      <canvas id="plateau-canvas" width="440" height="440"></canvas>
       <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
       <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
     </div>
@@ -122,226 +109,203 @@
     const socket = io('https://multijeuxgo.onrender.com');
     const canvas = document.getElementById('plateau-canvas');
     const ctx = canvas.getContext('2d');
-    const S = 40; // taille d'une case
-    const COULEURS = { rouge: '#e74c3c', bleu: '#3498db', vert: '#2ecc71', jaune: '#f1c40f' };
+    const S = 40;
 
-    let codePartie = '', monPseudo = '', estJ1 = false, monTour = false;
-    let deValeur = 0, aLance = false, partieTerminee = false;
+    const COULEURS_HEX = { rouge:'#e74c3c', bleu:'#3498db', vert:'#2ecc71', jaune:'#f1c40f' };
+    const COULEURS_EMOJI = { rouge:'🔴', bleu:'🔵', vert:'🟢', jaune:'🟡' };
+    const COULEURS_LIGHT = { rouge:'#ffaaaa', bleu:'#aaccff', vert:'#aaffcc', jaune:'#ffeeaa' };
 
-    // Positions des pions : -1 = base, 0-51 = piste commune, 52-56 = couloir
-    let pions = {
-      rouge: [-1,-1,-1,-1],
-      bleu: [-1,-1,-1,-1]
+    // Positions de départ sur la piste pour chaque couleur
+    const START_POS = { rouge:0, bleu:13, vert:26, jaune:39 };
+
+    // Coordonnées des bases pour chaque couleur
+    const BASE_COORDS = {
+      rouge: [[1,1],[1,2],[2,1],[2,2]],
+      bleu:  [[1,8],[1,9],[2,8],[2,9]],
+      vert:  [[8,1],[9,1],[8,2],[9,2]],
+      jaune: [[8,8],[9,8],[8,9],[9,9]]
     };
 
-    // Piste commune (52 cases) coordonnées canvas
-    function getCaseCoord(pos) {
-      const piste = [
-        [6,4],[6,3],[6,2],[6,1],[6,0],[5,0],[4,0],[4,1],[4,2],[4,3],[4,4], // 0-10
-        [3,4],[2,4],[1,4],[0,4],[0,5],[0,6],[1,6],[2,6],[3,6],[4,6],[4,7], // 11-21
-        [4,8],[4,9],[4,10],[5,10],[6,10],[6,9],[6,8],[6,7],[6,6],[7,6],    // 22-31
-        [8,6],[9,6],[10,6],[10,5],[10,4],[9,4],[8,4],[7,4],[6,4],[6,3],    // 32-41 (chevauchement ok)
-        [6,2],[6,1],[6,0],[5,0],[4,0],[4,1],[4,2],[4,3],[4,4],[3,4]        // 42-51
-      ];
-      if (pos < 0 || pos > 51) return null;
-      const [r, c] = piste[pos];
-      return { x: c * S + S/2, y: r * S + S/2 };
+    // Piste de 52 cases [row, col]
+    const PISTE_52 = [
+      [6,4],[6,3],[6,2],[6,1],[6,0],[5,0],[4,0],
+      [4,1],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],
+      [0,4],[0,5],[0,6],[1,6],[2,6],[3,6],[4,6],
+      [4,7],[4,8],[4,9],[4,10],[5,10],[6,10],
+      [6,9],[6,8],[6,7],[6,6],[7,6],[8,6],[9,6],
+      [10,6],[10,5],[10,4],[9,4],[8,4],[7,4],[6,4],
+      [6,3],[6,2],[6,1],[6,0],[5,0],[4,0],[4,1],
+      [4,2],[4,3],[4,4],[3,4]
+    ];
+
+    let codePartie = '', monPseudo = '', maCouleur = '', maCouleurRejoindre = '';
+    let nbJoueursTotal = 2;
+    let monTour = false, deValeur = 0, aLance = false, partieTerminee = false;
+    let joueurs = []; // [{pseudo, couleur}]
+    let monIndex = -1;
+    let tourActuel = 0;
+
+    // Pions: { rouge: [-1,-1,-1,-1], bleu: [...], ... }
+    let pions = {};
+
+    function setNbJoueurs(n, btn) {
+      nbJoueursTotal = n;
+      document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('actif'));
+      btn.classList.add('actif');
     }
 
-    function getBaseCoord(couleur, index) {
-      const bases = {
-        rouge: [[1,1],[1,2],[2,1],[2,2]],
-        bleu: [[1,8],[1,9],[2,8],[2,9]],
-        vert: [[8,1],[9,1],[8,2],[9,2]],
-        jaune: [[8,8],[9,8],[8,9],[9,9]]
-      };
-      const [r, c] = bases[couleur][index];
-      return { x: c * S + S/2, y: r * S + S/2 };
+    function choisirCouleur(c, el) {
+      maCouleur = c;
+      document.querySelectorAll('#couleurs-creer .couleur-btn').forEach(b => b.classList.remove('choisi'));
+      el.classList.add('choisi');
     }
 
-    function dessinerPlateau() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Fond
-      ctx.fillStyle = '#1a1828';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Zones de base colorées
-      const zones = [
-        { couleur: '#e74c3c', r: 0, c: 0, taille: 4 },
-        { couleur: '#3498db', r: 0, c: 7, taille: 4 },
-        { couleur: '#2ecc71', r: 7, c: 0, taille: 4 },
-        { couleur: '#f1c40f', r: 7, c: 7, taille: 4 }
-      ];
-      zones.forEach(z => {
-        ctx.fillStyle = z.couleur;
-        ctx.beginPath();
-        ctx.roundRect(z.c * S + 2, z.r * S + 2, z.taille * S - 4, z.taille * S - 4, 8);
-        ctx.fill();
-        // Cercles intérieurs (cases pour pions)
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        [[1,1],[1,2],[2,1],[2,2]].forEach(([dr, dc]) => {
-          ctx.beginPath();
-          ctx.arc((z.c + dc) * S + S/2, (z.r + dr) * S + S/2, S/2 - 4, 0, Math.PI*2);
-          ctx.fill();
-        });
-      });
-
-      // Piste blanche
-      ctx.fillStyle = '#ecf0f1';
-      // Couloir vertical (col 4-6, rows 0-10 sauf bases)
-      for (let r = 0; r <= 10; r++) {
-        for (let c = 4; c <= 6; c++) {
-          if ((r <= 3 && (c <= 3 || c >= 7))) continue;
-          ctx.fillStyle = '#ecf0f1';
-          ctx.fillRect(c * S + 1, r * S + 1, S - 2, S - 2);
-        }
-      }
-      // Couloir horizontal
-      for (let r = 4; r <= 6; r++) {
-        for (let c = 0; c <= 10; c++) {
-          ctx.fillStyle = '#ecf0f1';
-          ctx.fillRect(c * S + 1, r * S + 1, S - 2, S - 2);
-        }
-      }
-
-      // Couloirs colorés vers centre
-      const couloirsRouge = [[5,1],[5,2],[5,3],[5,4],[5,5]];
-      const couloirsBleu = [[1,5],[2,5],[3,5],[4,5],[5,5]];
-      const couloirsVert = [[5,9],[5,8],[5,7],[5,6],[5,5]];
-      const couloirsJaune = [[9,5],[8,5],[7,5],[6,5],[5,5]];
-
-      [[couloirsRouge,'#ffaaaa'],[couloirsBleu,'#aaccff'],[couloirsVert,'#aaffcc'],[couloirsJaune,'#ffeeaa']].forEach(([cases, col]) => {
-        ctx.fillStyle = col;
-        cases.forEach(([r, c]) => {
-          ctx.fillRect(c * S + 1, r * S + 1, S - 2, S - 2);
-        });
-      });
-
-      // Centre étoile colorée
-      const cx = 5 * S, cy = 5 * S;
-      ctx.save();
-      ctx.translate(cx + S/2, cy + S/2);
-      const secteurs = ['#e74c3c','#f1c40f','#2ecc71','#3498db'];
-      secteurs.forEach((col, i) => {
-        ctx.fillStyle = col;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, S * 0.9, (i * Math.PI/2) - Math.PI/4, ((i+1) * Math.PI/2) - Math.PI/4);
-        ctx.closePath();
-        ctx.fill();
-      });
-      ctx.restore();
-
-      // Cases de départ (étoiles)
-      const departs = [[2, S*0+S/2, S*4+S/2], [2, S*6+S/2, S*0+S/2]];
-
-      // Grille (lignes)
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i <= 11; i++) {
-        ctx.beginPath(); ctx.moveTo(i*S, 0); ctx.lineTo(i*S, 11*S); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i*S); ctx.lineTo(11*S, i*S); ctx.stroke();
-      }
-
-      // Pions
-      dessinerPions();
+    function choisirCouleurRejoindre(c, el) {
+      maCouleurRejoindre = c;
+      document.querySelectorAll('#couleurs-rejoindre .couleur-btn').forEach(b => b.classList.remove('choisi'));
+      el.classList.add('choisi');
     }
-
-    function dessinerPions() {
-      Object.entries(pions).forEach(([couleur, positions]) => {
-        const couleurHex = COULEURS[couleur];
-        positions.forEach((pos, i) => {
-          let x, y;
-          if (pos === -1) {
-            const coord = getBaseCoord(couleur, i);
-            x = coord.x; y = coord.y;
-          } else if (pos >= 0 && pos < 52) {
-            const startPos = couleur === 'rouge' ? 0 : 26;
-            const realPos = (pos + startPos) % 52;
-            const piste = getPisteCoords();
-            if (piste[realPos]) { x = piste[realPos].x; y = piste[realPos].y; }
-          } else { return; }
-
-          // Dessin du pion
-          ctx.beginPath();
-          ctx.arc(x, y, S/2 - 4, 0, Math.PI*2);
-          ctx.fillStyle = couleurHex;
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          // Reflet
-          ctx.beginPath();
-          ctx.arc(x - 3, y - 3, 4, 0, Math.PI*2);
-          ctx.fillStyle = 'rgba(255,255,255,0.4)';
-          ctx.fill();
-        });
-      });
-    }
-
-    function getPisteCoords() {
-      const coords = [];
-      // 52 cases autour du plateau
-      const piste52 = [
-        [6,4],[6,3],[6,2],[6,1],[6,0],[5,0],[4,0],
-        [4,1],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],
-        [0,4],[0,5],[0,6],[1,6],[2,6],[3,6],[4,6],
-        [4,7],[4,8],[4,9],[4,10],[5,10],[6,10],
-        [6,9],[6,8],[6,7],[6,6],[7,6],[8,6],[9,6],
-        [10,6],[10,5],[10,4],[9,4],[8,4],[7,4],[6,4],
-        [6,3],[6,2],[6,1],[6,0],[5,0],[4,0],[4,1],
-        [4,2],[4,3],[4,4],[3,4]
-      ];
-      piste52.forEach(([r, c]) => coords.push({ x: c*S + S/2, y: r*S + S/2 }));
-      return coords;
-    }
-
-    const DE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
     function creerPartie() {
-      monPseudo = document.getElementById('pseudo').value.trim();
+      monPseudo = document.getElementById('pseudo-creer').value.trim();
       if (!monPseudo) { alert('Entre ton pseudo !'); return; }
-      estJ1 = true;
-      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'ludo' });
+      if (!maCouleur) { alert('Choisis une couleur !'); return; }
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'ludo', couleur: maCouleur, nbJoueurs: nbJoueursTotal });
     }
 
     function rejoindrePartie() {
-      monPseudo = document.getElementById('pseudo').value.trim();
+      monPseudo = document.getElementById('pseudo-rejoindre').value.trim();
       const code = document.getElementById('code-input').value.trim().toUpperCase();
-      if (!monPseudo || !code) { alert('Entre ton pseudo et le code !'); return; }
-      estJ1 = false;
+      const couleur = maCouleurRejoindre;
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      if (!couleur) { alert('Choisis une couleur !'); return; }
+      if (!code) { alert('Entre le code !'); return; }
+      maCouleur = couleur;
       codePartie = code;
-      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code, couleur: couleur });
     }
 
     socket.on('salle_creee', (data) => {
       codePartie = data.code;
       document.getElementById('code-affiche').textContent = data.code;
-      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('lobby-creer').style.display = 'none';
       document.getElementById('attente').style.display = 'block';
+      document.getElementById('nb-total').textContent = nbJoueursTotal;
+      mettreAJourConnectes([{ pseudo: monPseudo, couleur: maCouleur }], 1, nbJoueursTotal);
     });
 
     socket.on('joueur_rejoint', (data) => {
-      document.getElementById('lobby').style.display = 'none';
-      document.getElementById('attente').style.display = 'none';
-      document.getElementById('jeu').style.display = 'block';
-      document.getElementById('nom-j1').textContent = data.joueurs[0];
-      document.getElementById('nom-j2').textContent = data.joueurs[1];
-      pions = { rouge: [-1,-1,-1,-1], bleu: [-1,-1,-1,-1] };
-      aLance = false; partieTerminee = false; deValeur = 0;
-      dessinerPlateau();
-      if (estJ1) {
-        monTour = true;
-        document.getElementById('status').textContent = '🔴 Ton tour ! Lance le dé';
-        document.getElementById('info-j1').classList.add('actif');
-      } else {
-        monTour = false;
-        document.getElementById('status').textContent = '🔴 ' + data.joueurs[0] + ' commence...';
-        document.getElementById('info-j1').classList.add('actif');
+      if (data.joueurs) {
+        const joueursData = data.joueurs.map((p, i) => ({ pseudo: p, couleur: data.couleurs ? data.couleurs[i] : 'rouge' }));
+        mettreAJourConnectes(joueursData, data.joueurs.length, data.nbJoueurs || nbJoueursTotal);
+        nbJoueursTotal = data.nbJoueurs || nbJoueursTotal;
+        document.getElementById('nb-total').textContent = nbJoueursTotal;
+
+        // Si on est le créateur et tous les joueurs sont là
+        if (data.joueurs.length >= nbJoueursTotal && monIndex === 0) {
+          document.getElementById('btn-lancer-partie').style.display = 'block';
+        }
+
+        // Si la partie démarre automatiquement
+        if (data.debut) demarrerJeu(data);
       }
     });
+
+    function mettreAJourConnectes(joueursData, nb, total) {
+      document.getElementById('nb-connectes').textContent = nb;
+      const liste = document.getElementById('liste-connectes');
+      liste.innerHTML = '';
+      joueursData.forEach(j => {
+        liste.innerHTML += '<div class="joueur-connecte"><span style="font-size:20px;">' + COULEURS_EMOJI[j.couleur] + '</span><span style="font-weight:700;">' + j.pseudo + '</span></div>';
+      });
+      if (nb >= total) {
+        document.getElementById('btn-lancer-partie').style.display = 'block';
+      }
+    }
+
+    function lancerPartie() {
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'lancer_partie' },
+        pseudo: monPseudo
+      });
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'lancer_partie' || coup.type === 'debut') {
+        if (coup.joueurs) demarrerJeu(coup);
+      } else if (coup.type === 'lancer') {
+        document.getElementById('de').textContent = DE_FACES[coup.valeur - 1];
+        document.getElementById('de-info').textContent = data.pseudo + ' : ' + coup.valeur;
+        deValeur = coup.valeur;
+      } else if (coup.type === 'deplacement') {
+        pions[coup.couleur][coup.index] = coup.nouvellePos;
+        dessinerPlateau();
+        if (verifierVictoire(coup.couleur)) {
+          const j = joueurs.find(j => j.couleur === coup.couleur);
+          partieTerminee = true;
+          document.getElementById('gagnant-msg').style.display = 'block';
+          document.getElementById('gagnant-msg').textContent = (coup.couleur === maCouleur ? '😢' : '🏆') + ' ' + (j ? j.pseudo : '') + ' a gagné !';
+          document.getElementById('btn-rejouer').style.display = 'inline-block';
+        }
+      } else if (coup.type === 'fin_tour') {
+        tourActuel = coup.tourSuivant;
+        monTour = (joueurs[tourActuel] && joueurs[tourActuel].pseudo === monPseudo);
+        aLance = false;
+        document.getElementById('de').textContent = '🎲';
+        mettreAJourTour();
+      }
+    });
+
+    function demarrerJeu(data) {
+      // Récupérer les joueurs et leurs couleurs
+      if (data.joueurs && data.couleurs) {
+        joueurs = data.joueurs.map((p, i) => ({ pseudo: p, couleur: data.couleurs[i] }));
+      } else if (data.joueurs) {
+        joueurs = data.joueurs.map((p, i) => ({ pseudo: p, couleur: ['rouge','bleu','vert','jaune'][i] }));
+      }
+
+      monIndex = joueurs.findIndex(j => j.pseudo === monPseudo);
+      tourActuel = 0;
+
+      // Initialiser les pions
+      pions = {};
+      joueurs.forEach(j => { pions[j.couleur] = [-1,-1,-1,-1]; });
+
+      document.getElementById('lobby-creer').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+
+      // Afficher la barre des joueurs
+      const bar = document.getElementById('joueurs-bar');
+      bar.innerHTML = '';
+      joueurs.forEach((j, i) => {
+        bar.innerHTML += '<div class="joueur-info" id="info-j' + i + '">' + COULEURS_EMOJI[j.couleur] + ' ' + j.pseudo + '</div>';
+      });
+
+      monTour = (joueurs[0].pseudo === monPseudo);
+      aLance = false; partieTerminee = false; deValeur = 0;
+      dessinerPlateau();
+      mettreAJourTour();
+    }
+
+    function mettreAJourTour() {
+      document.querySelectorAll('.joueur-info').forEach((el, i) => {
+        el.classList.toggle('actif', i === tourActuel);
+      });
+      const joueurActuel = joueurs[tourActuel];
+      if (!joueurActuel) return;
+      if (monTour) {
+        document.getElementById('status').textContent = COULEURS_EMOJI[maCouleur] + ' Ton tour ! Lance le dé';
+        document.getElementById('de-info').textContent = 'Clique pour lancer !';
+      } else {
+        document.getElementById('status').textContent = '⏳ Tour de ' + joueurActuel.pseudo + ' ' + COULEURS_EMOJI[joueurActuel.couleur];
+        document.getElementById('de-info').textContent = 'En attente...';
+      }
+    }
+
+    const DE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
     function lancerDe() {
       if (!monTour || aLance || partieTerminee) return;
@@ -357,49 +321,68 @@
     }
 
     function verifierActions() {
-      const maCouleur = estJ1 ? 'rouge' : 'bleu';
       const mesPions = pions[maCouleur];
+      if (!mesPions) return;
       const enBase = mesPions.filter(p => p === -1).length;
       const surPiste = mesPions.filter(p => p >= 0).length;
-      if (enBase === 4 && deValeur !== 6) {
+      // Peut sortir avec 6 OU 1
+      const peutSortir = (deValeur === 6 || deValeur === 1) && enBase > 0;
+      if (enBase === 4 && !peutSortir) {
         document.getElementById('status').textContent = 'Pas de mouvement ! Tour suivant...';
         setTimeout(finTour, 1500);
-      } else if (deValeur === 6 && enBase > 0) {
-        document.getElementById('status').textContent = '🎉 6 ! Clique sur un pion pour le sortir ou en avancer un !';
+      } else if (peutSortir && enBase > 0) {
+        document.getElementById('status').textContent = '🎉 ' + deValeur + ' ! Tu peux sortir un pion ou en avancer un !';
       } else {
-        document.getElementById('status').textContent = 'Clique sur un de tes pions !';
+        document.getElementById('status').textContent = 'Clique sur un de tes pions pour le déplacer !';
       }
     }
 
     canvas.addEventListener('click', (e) => {
       if (!monTour || !aLance || partieTerminee) return;
+      if (!pions[maCouleur]) return;
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       const mx = (e.clientX - rect.left) * scaleX;
       const my = (e.clientY - rect.top) * scaleY;
-      const maCouleur = estJ1 ? 'rouge' : 'bleu';
+
       pions[maCouleur].forEach((pos, i) => {
-        let px, py;
-        if (pos === -1) {
-          const coord = getBaseCoord(maCouleur, i);
-          px = coord.x; py = coord.y;
-        } else {
-          const startPos = maCouleur === 'rouge' ? 0 : 26;
-          const realPos = (pos + startPos) % 52;
-          const piste = getPisteCoords();
-          if (piste[realPos]) { px = piste[realPos].x; py = piste[realPos].y; }
-          else return;
-        }
-        if (Math.hypot(mx - px, my - py) < S/2) {
+        const coord = getPionCoord(maCouleur, i, pos);
+        if (!coord) return;
+        if (Math.hypot(mx - coord.x, my - coord.y) < S/2) {
           deplacerPionAction(maCouleur, i, pos);
         }
       });
     });
 
+    function getPionCoord(couleur, index, pos) {
+      if (pos === -1) {
+        const [r, c] = BASE_COORDS[couleur][index];
+        return { x: c * S + S/2, y: r * S + S/2 };
+      } else if (pos >= 0 && pos < 52) {
+        const startPos = START_POS[couleur];
+        const realPos = (startPos + pos) % 52;
+        const [r, c] = PISTE_52[realPos];
+        return { x: c * S + S/2, y: r * S + S/2 };
+      } else if (pos >= 52) {
+        // Dans le couloir maison
+        const couloirCoords = {
+          rouge: [[5,1],[5,2],[5,3],[5,4],[5,5]],
+          bleu:  [[1,5],[2,5],[3,5],[4,5],[5,5]],
+          vert:  [[5,9],[5,8],[5,7],[5,6],[5,5]],
+          jaune: [[9,5],[8,5],[7,5],[6,5],[5,5]]
+        };
+        const idx = Math.min(pos - 52, 4);
+        const [r, c] = couloirCoords[couleur][idx];
+        return { x: c * S + S/2, y: r * S + S/2 };
+      }
+      return null;
+    }
+
     function deplacerPionAction(couleur, index, posActuelle) {
-      if (posActuelle === -1 && deValeur !== 6) {
-        document.getElementById('status').textContent = 'Tu as besoin d\'un 6 pour sortir un pion !';
+      const peutSortir = deValeur === 6 || deValeur === 1;
+      if (posActuelle === -1 && !peutSortir) {
+        document.getElementById('status').textContent = 'Tu as besoin d\'un 6 ou 1 pour sortir !';
         return;
       }
       let nouvellePos;
@@ -407,10 +390,7 @@
         nouvellePos = 0;
       } else {
         nouvellePos = posActuelle + deValeur;
-        if (nouvellePos >= 52) {
-          document.getElementById('status').textContent = '🏆 Pion arrivé !';
-          nouvellePos = 52;
-        }
+        if (nouvellePos > 57) return; // Dépasse la maison
       }
       pions[couleur][index] = nouvellePos;
       aLance = false;
@@ -421,69 +401,176 @@
       });
       dessinerPlateau();
       if (verifierVictoire(couleur)) {
-        const gagnant = couleur === 'rouge' ? document.getElementById('nom-j1').textContent : document.getElementById('nom-j2').textContent;
+        const j = joueurs.find(j => j.couleur === couleur);
         partieTerminee = true;
         document.getElementById('gagnant-msg').style.display = 'block';
-        document.getElementById('gagnant-msg').textContent = '🏆 ' + gagnant + ' a gagné !';
+        document.getElementById('gagnant-msg').textContent = '🏆 ' + (j ? j.pseudo : '') + ' a gagné !';
         document.getElementById('btn-rejouer').style.display = 'inline-block';
-      } else if (deValeur === 6) {
+        monTour = false;
+        return;
+      }
+      if (deValeur === 6) {
         document.getElementById('status').textContent = '🎉 6 ! Relance le dé !';
         aLance = false;
+        monTour = true;
       } else {
         finTour();
       }
     }
 
     function verifierVictoire(couleur) {
-      return pions[couleur].every(p => p >= 52);
+      return pions[couleur] && pions[couleur].every(p => p >= 57);
     }
 
     function finTour() {
       monTour = false; aLance = false;
       document.getElementById('de').textContent = '🎲';
-      document.getElementById('de-info').textContent = 'En attente...';
-      const adv = estJ1 ? document.getElementById('nom-j2').textContent : document.getElementById('nom-j1').textContent;
-      document.getElementById('status').textContent = '⏳ Tour de ' + adv + '...';
-      document.getElementById('info-j1').classList.toggle('actif');
-      document.getElementById('info-j2').classList.toggle('actif');
-      socket.emit('jouer_coup', { code: codePartie, coup: { type: 'fin_tour' }, pseudo: monPseudo });
+      const prochainTour = (tourActuel + 1) % joueurs.length;
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'fin_tour', tourSuivant: prochainTour },
+        pseudo: monPseudo
+      });
+      tourActuel = prochainTour;
+      monTour = (joueurs[prochainTour] && joueurs[prochainTour].pseudo === monPseudo);
+      mettreAJourTour();
     }
 
-    socket.on('coup_recu', (data) => {
-      const coup = data.coup;
-      if (coup.type === 'lancer') {
-        document.getElementById('de').textContent = DE_FACES[coup.valeur - 1];
-        document.getElementById('de-info').textContent = data.pseudo + ' a obtenu : ' + coup.valeur;
-        deValeur = coup.valeur;
-      } else if (coup.type === 'deplacement') {
-        pions[coup.couleur][coup.index] = coup.nouvellePos;
-        dessinerPlateau();
-        if (verifierVictoire(coup.couleur)) {
-          const gagnant = coup.couleur === 'rouge' ? document.getElementById('nom-j1').textContent : document.getElementById('nom-j2').textContent;
-          partieTerminee = true;
-          document.getElementById('gagnant-msg').style.display = 'block';
-          document.getElementById('gagnant-msg').textContent = '😢 ' + gagnant + ' a gagné !';
-          document.getElementById('btn-rejouer').style.display = 'inline-block';
+    function dessinerPlateau() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#1a1828';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Zones de base
+      const zones = [
+        { couleur: 'rouge', r: 0, c: 0 },
+        { couleur: 'bleu',  r: 0, c: 7 },
+        { couleur: 'vert',  r: 7, c: 0 },
+        { couleur: 'jaune', r: 7, c: 7 }
+      ];
+      zones.forEach(z => {
+        ctx.fillStyle = COULEURS_HEX[z.couleur];
+        ctx.beginPath();
+        ctx.roundRect(z.c * S + 2, z.r * S + 2, 4 * S - 4, 4 * S - 4, 10);
+        ctx.fill();
+        BASE_COORDS[z.couleur].forEach(([r, c]) => {
+          ctx.beginPath();
+          ctx.arc(c * S + S/2, r * S + S/2, S/2 - 5, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        });
+      });
+
+      // Piste blanche
+      ctx.fillStyle = '#ecf0f1';
+      for (let r = 0; r <= 10; r++) {
+        for (let c = 0; c <= 10; c++) {
+          const estCouloir = (c >= 4 && c <= 6) || (r >= 4 && r <= 6);
+          const estBase = (r <= 3 && c <= 3) || (r <= 3 && c >= 7) || (r >= 7 && c <= 3) || (r >= 7 && c >= 7);
+          if (estCouloir && !estBase) {
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(c * S + 1, r * S + 1, S - 2, S - 2);
+          }
         }
-      } else if (coup.type === 'fin_tour') {
-        monTour = true; aLance = false;
-        document.getElementById('de').textContent = '🎲';
-        document.getElementById('de-info').textContent = 'Clique pour lancer !';
-        document.getElementById('status').textContent = (estJ1 ? '🔴' : '🔵') + ' Ton tour ! Lance le dé';
-        document.getElementById('info-j1').classList.toggle('actif');
-        document.getElementById('info-j2').classList.toggle('actif');
       }
-    });
+
+      // Couloirs colorés
+      const couloirsConfig = [
+        { couleur: 'rouge', cases: [[5,1],[5,2],[5,3],[5,4],[5,5]] },
+        { couleur: 'bleu',  cases: [[1,5],[2,5],[3,5],[4,5],[5,5]] },
+        { couleur: 'vert',  cases: [[5,9],[5,8],[5,7],[5,6],[5,5]] },
+        { couleur: 'jaune', cases: [[9,5],[8,5],[7,5],[6,5],[5,5]] }
+      ];
+      couloirsConfig.forEach(({ couleur, cases }) => {
+        cases.forEach(([r, c]) => {
+          ctx.fillStyle = COULEURS_LIGHT[couleur];
+          ctx.fillRect(c * S + 1, r * S + 1, S - 2, S - 2);
+        });
+      });
+
+      // Centre
+      const cx = 5 * S + S/2, cy = 5 * S + S/2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ['#e74c3c','#f1c40f','#2ecc71','#3498db'].forEach((col, i) => {
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, S, (i * Math.PI/2) - Math.PI/4, ((i+1) * Math.PI/2) - Math.PI/4);
+        ctx.closePath();
+        ctx.fill();
+      });
+      ctx.restore();
+
+      // Grille
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 11; i++) {
+        ctx.beginPath(); ctx.moveTo(i*S, 0); ctx.lineTo(i*S, 11*S); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i*S); ctx.lineTo(11*S, i*S); ctx.stroke();
+      }
+
+      // Cases de départ (étoile)
+      [[0,6],[6,0],[10,4],[4,10]].forEach(([r,c]) => {
+        ctx.fillStyle = '#ffd93d';
+        ctx.font = (S*0.6) + 'px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('★', c*S + S/2, r*S + S/2);
+      });
+
+      // Pions
+      dessinerTousLesPions();
+    }
+
+    function dessinerTousLesPions() {
+      Object.entries(pions).forEach(([couleur, positions]) => {
+        positions.forEach((pos, i) => {
+          const coord = getPionCoord(couleur, i, pos);
+          if (!coord) return;
+          const { x, y } = coord;
+          // Ombre
+          ctx.beginPath();
+          ctx.arc(x + 1, y + 2, S/2 - 5, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fill();
+          // Corps
+          ctx.beginPath();
+          ctx.arc(x, y, S/2 - 5, 0, Math.PI*2);
+          ctx.fillStyle = COULEURS_HEX[couleur];
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          // Reflet
+          ctx.beginPath();
+          ctx.arc(x - 3, y - 3, 4, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.fill();
+          // Numéro
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.font = 'bold 9px Nunito';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(i + 1, x, y + 1);
+        });
+      });
+    }
 
     function rejouer() {
-      pions = { rouge: [-1,-1,-1,-1], bleu: [-1,-1,-1,-1] };
+      pions = {};
+      joueurs.forEach(j => { pions[j.couleur] = [-1,-1,-1,-1]; });
       aLance = false; partieTerminee = false; deValeur = 0;
+      tourActuel = 0;
       document.getElementById('gagnant-msg').style.display = 'none';
       document.getElementById('btn-rejouer').style.display = 'none';
       document.getElementById('de').textContent = '🎲';
       dessinerPlateau();
-      if (estJ1) { monTour = true; document.getElementById('status').textContent = '🔴 Ton tour !'; }
-      else { monTour = false; document.getElementById('status').textContent = '⏳ En attente...'; }
+      monTour = (joueurs[0] && joueurs[0].pseudo === monPseudo);
+      mettreAJourTour();
     }
 
     socket.on('erreur', (data) => { alert(data.message); });
