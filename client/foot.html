@@ -1,1 +1,606 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Football - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#9917;</div><h2>Football</h2><p style='color:#9b96b8;'>2 joueurs - Marque des buts !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Football - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; margin: 0; }
+    .jeu-container { max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+
+    /* SCORE BAR */
+    .score-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 10px 16px; border-bottom: 2px solid #2e2b45; }
+    .equipe-info { display: flex; align-items: center; gap: 8px; }
+    .drapeau { font-size: 28px; }
+    .nom-equipe { font-size: 13px; font-weight: 700; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .score-milieu { text-align: center; }
+    .score-num { font-size: 28px; font-weight: 900; color: white; }
+    .buts-info { font-size: 10px; color: #9b96b8; }
+    .timer-bar { height: 4px; background: #ffd93d; margin: 0; transition: width 0.1s; }
+
+    /* SETUP */
+    .setup-container { padding: 16px; }
+    .setup-title { font-size: 18px; font-weight: 900; color: #ffd93d; margin-bottom: 16px; text-transform: uppercase; }
+    .pays-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; max-height: 200px; overflow-y: auto; }
+    .pays-btn { padding: 8px 4px; border-radius: 8px; border: 2px solid #2e2b45; background: #1a1828; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 24px; }
+    .pays-btn:hover { border-color: #7c5cbf; }
+    .pays-btn.choisi { border-color: #4ecdc4; background: #1f3a2e; }
+    .formation-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .formation-btn { background: #1a1828; border-radius: 10px; padding: 8px; border: 2px solid #2e2b45; cursor: pointer; transition: all 0.2s; }
+    .formation-btn:hover { border-color: #7c5cbf; }
+    .formation-btn.choisi { border-color: #4ecdc4; background: #1f3a2e; }
+    .formation-nom { font-size: 11px; font-weight: 700; color: #9b96b8; margin-top: 4px; }
+    .formation-preview { width: 100%; aspect-ratio: 0.7; background: #1a5c1a; border-radius: 6px; position: relative; }
+    .joueur-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ecdc4; position: absolute; transform: translate(-50%, -50%); }
+    .confirmer-btn { width: 100%; padding: 14px; border-radius: 50px; border: none; background: #4ecdc4; color: #0f0e17; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 16px; cursor: pointer; margin-top: 8px; }
+    .timer-setup { font-size: 24px; font-weight: 900; color: white; margin: 12px 0; }
+    .attente-adverse { font-size: 13px; color: #9b96b8; margin: 8px 0; }
+
+    /* TERRAIN */
+    #terrain-canvas { width: 100%; display: block; cursor: pointer; }
+    .status-bar { background: rgba(0,0,0,0.8); padding: 10px 16px; font-weight: 700; font-size: 13px; text-align: center; }
+    .action-btns { display: flex; gap: 8px; padding: 10px 16px; background: rgba(0,0,0,0.8); }
+    .action-btn { flex: 1; padding: 10px; border-radius: 50px; border: none; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .btn-passe { background: #3498db; color: white; }
+    .btn-tir { background: #e74c3c; color: white; }
+    .btn-sprint { background: #f1c40f; color: #0f0e17; }
+    .action-btn:hover { opacity: 0.85; transform: scale(0.98); }
+    .action-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+    .gagnant-msg { font-size: 20px; font-weight: 900; color: #ffd93d; padding: 16px; background: rgba(0,0,0,0.9); }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">⚽</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <!-- LOBBY -->
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">⚽ Football</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Choisis ton pays, ta formation et joue !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre</button>
+      </div>
+    </div>
+
+    <!-- ATTENTE -->
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <!-- SETUP ÉQUIPE -->
+    <div id="setup" style="display:none;">
+      <div class="score-bar">
+        <div class="equipe-info">
+          <span class="drapeau" id="drapeau-j1">🏳️</span>
+          <span class="nom-equipe" id="setup-nom-j1">J1</span>
+        </div>
+        <div class="score-milieu">
+          <div class="score-num">0 - 0</div>
+          <div class="buts-info">Buts pour gagner: 3</div>
+        </div>
+        <div class="equipe-info">
+          <span class="drapeau" id="drapeau-j2">🏳️</span>
+          <span class="nom-equipe" id="setup-nom-j2">J2</span>
+        </div>
+      </div>
+
+      <div class="setup-container" id="setup-pays" style="display:none;">
+        <div class="setup-title">Sélectionnez votre équipe</div>
+        <div class="pays-grid" id="pays-grid"></div>
+        <div class="timer-setup">Début dans <span id="timer-pays">30</span></div>
+        <button class="confirmer-btn" onclick="confirmerPays()">CONFIRMER <span id="pays-selectionne-nom">Aucun</span></button>
+      </div>
+
+      <div class="setup-container" id="setup-formation" style="display:none;">
+        <div class="setup-title">Sélectionnez votre formation</div>
+        <div style="margin-bottom:10px;">
+          <button onclick="setTypeFormation('attaque',this)" style="padding:8px 16px;border-radius:20px;border:none;background:#e74c3c;color:white;font-weight:700;cursor:pointer;margin:4px;" id="btn-attaque">ATTAQUE</button>
+          <button onclick="setTypeFormation('defense',this)" style="padding:8px 16px;border-radius:20px;border:none;background:#2e2b45;color:white;font-weight:700;cursor:pointer;margin:4px;" id="btn-defense">DÉFENSIF</button>
+        </div>
+        <div class="formation-grid" id="formation-grid"></div>
+        <div class="timer-setup">Début dans <span id="timer-formation">30</span></div>
+        <button class="confirmer-btn" onclick="confirmerFormation()">CONFIRMER <span id="formation-selectionnee-nom">1-4-1</span></button>
+      </div>
+    </div>
+
+    <!-- JEU -->
+    <div id="jeu" style="display:none;">
+      <div class="score-bar">
+        <div class="equipe-info">
+          <span class="drapeau" id="jeu-drapeau-j1">🏳️</span>
+          <span class="nom-equipe" id="jeu-nom-j1">J1</span>
+        </div>
+        <div class="score-milieu">
+          <div class="score-num"><span id="jeu-score-j1">0</span> - <span id="jeu-score-j2">0</span></div>
+          <div class="buts-info">Buts pour gagner: 3</div>
+        </div>
+        <div class="equipe-info">
+          <span class="nom-equipe" id="jeu-nom-j2">J2</span>
+          <span class="drapeau" id="jeu-drapeau-j2">🏳️</span>
+        </div>
+      </div>
+      <div class="timer-bar" id="timer-bar" style="width:100%;"></div>
+      <canvas id="terrain-canvas" width="440" height="620"></canvas>
+      <div class="status-bar" id="status">En attente...</div>
+      <div class="action-btns">
+        <button class="action-btn btn-passe" onclick="action('passe')" id="btn-passe">⚡ Passe</button>
+        <button class="action-btn btn-tir" onclick="action('tir')" id="btn-tir">🎯 Tir</button>
+        <button class="action-btn btn-sprint" onclick="action('sprint')" id="btn-sprint">💨 Sprint</button>
+      </div>
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    const canvas = document.getElementById('terrain-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 440, H = 620;
+
+    const PAYS = [
+      {nom:'Turquie', flag:'🇹🇷'}, {nom:'France', flag:'🇫🇷'}, {nom:'Espagne', flag:'🇪🇸'},
+      {nom:'Allemagne', flag:'🇩🇪'}, {nom:'Italie', flag:'🇮🇹'}, {nom:'Brésil', flag:'🇧🇷'},
+      {nom:'Argentine', flag:'🇦🇷'}, {nom:'Portugal', flag:'🇵🇹'}, {nom:'Angleterre', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {nom:'Pays-Bas', flag:'🇳🇱'}, {nom:'Belgique', flag:'🇧🇪'}, {nom:'Maroc', flag:'🇲🇦'},
+      {nom:'Sénégal', flag:'🇸🇳'}, {nom:'Algérie', flag:'🇩🇿'}, {nom:'Côte d\'Ivoire', flag:'🇨🇮'},
+      {nom:'USA', flag:'🇺🇸'}, {nom:'Mexique', flag:'🇲🇽'}, {nom:'Japon', flag:'🇯🇵'},
+      {nom:'Corée', flag:'🇰🇷'}, {nom:'Suisse', flag:'🇨🇭'}
+    ];
+
+    const FORMATIONS = {
+      attaque: [
+        { nom:'1-3-2', joueurs:[[0.5,0.85],[0.2,0.65],[0.5,0.65],[0.8,0.65],[0.3,0.45],[0.7,0.45]] },
+        { nom:'1-2-3', joueurs:[[0.5,0.85],[0.3,0.65],[0.7,0.65],[0.2,0.45],[0.5,0.45],[0.8,0.45]] },
+        { nom:'1-4-1', joueurs:[[0.5,0.85],[0.15,0.65],[0.38,0.65],[0.62,0.65],[0.85,0.65],[0.5,0.42]] },
+        { nom:'1-2-1-2', joueurs:[[0.5,0.85],[0.3,0.68],[0.7,0.68],[0.5,0.52],[0.3,0.38],[0.7,0.38]] }
+      ],
+      defense: [
+        { nom:'1-3-2', joueurs:[[0.5,0.85],[0.2,0.72],[0.5,0.72],[0.8,0.72],[0.35,0.55],[0.65,0.55]] },
+        { nom:'1-2-3', joueurs:[[0.5,0.85],[0.3,0.72],[0.7,0.72],[0.2,0.52],[0.5,0.52],[0.8,0.52]] },
+        { nom:'1-4-1', joueurs:[[0.5,0.85],[0.15,0.72],[0.38,0.72],[0.62,0.72],[0.85,0.72],[0.5,0.52]] },
+        { nom:'1-2-1-2', joueurs:[[0.5,0.85],[0.3,0.75],[0.7,0.75],[0.5,0.60],[0.3,0.45],[0.7,0.45]] }
+      ]
+    };
+
+    let codePartie='', monPseudo='', estJ1=false;
+    let paysCourt={j1:{nom:'France',flag:'🇫🇷'}, j2:{nom:'Espagne',flag:'🇪🇸'}};
+    let formationChoisie={j1:FORMATIONS.attaque[2], j2:FORMATIONS.attaque[2]};
+    let paysSelectionne=null, formationSelectionnee=FORMATIONS.attaque[2];
+    let typeFormation='attaque';
+    let scoreJ1=0, scoreJ2=0;
+    let ballPos={x:W/2, y:H/2};
+    let joueursPosJ1=[], joueursPosJ2=[];
+    let possessionJ1=true;
+    let partieTerminee=false, timerSetup=30, timerInterval=null;
+    let passes=0, maxPasses=3;
+
+    // Init positions joueurs
+    function initPositions(formation, estBas) {
+      return formation.joueurs.map(([fx, fy]) => ({
+        x: fx * W,
+        y: estBas ? fy * H : (1 - fy) * H
+      }));
+    }
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'foot' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo || !code) { alert('Entre pseudo et code !'); return; }
+      estJ1 = false; codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('setup').style.display = 'block';
+      document.getElementById('setup-nom-j1').textContent = data.joueurs[0];
+      document.getElementById('setup-nom-j2').textContent = data.joueurs[1];
+      afficherSetupPays();
+    });
+
+    function afficherSetupPays() {
+      document.getElementById('setup-pays').style.display = 'block';
+      document.getElementById('setup-formation').style.display = 'none';
+      const grid = document.getElementById('pays-grid');
+      grid.innerHTML = '';
+      PAYS.forEach((p, i) => {
+        const btn = document.createElement('div');
+        btn.classList.add('pays-btn');
+        btn.textContent = p.flag;
+        btn.title = p.nom;
+        btn.onclick = () => {
+          paysSelectionne = p;
+          document.querySelectorAll('.pays-btn').forEach(b => b.classList.remove('choisi'));
+          btn.classList.add('choisi');
+          document.getElementById('pays-selectionne-nom').textContent = p.nom;
+        };
+        grid.appendChild(btn);
+      });
+      // Sélectionner Turquie par défaut
+      paysSelectionne = PAYS[0];
+      grid.children[0].classList.add('choisi');
+      document.getElementById('pays-selectionne-nom').textContent = PAYS[0].nom;
+      startTimerSetup('timer-pays', 30, () => confirmerPays());
+    }
+
+    function confirmerPays() {
+      if (!paysSelectionne) paysSelectionne = PAYS[0];
+      clearInterval(timerInterval);
+      if (estJ1) {
+        paysCourt.j1 = paysSelectionne;
+        document.getElementById('drapeau-j1').textContent = paysSelectionne.flag;
+      } else {
+        paysCourt.j2 = paysSelectionne;
+        document.getElementById('drapeau-j2').textContent = paysSelectionne.flag;
+      }
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'choix_pays', pays: paysSelectionne, estJ1: estJ1 },
+        pseudo: monPseudo
+      });
+      afficherSetupFormation();
+    }
+
+    function afficherSetupFormation() {
+      document.getElementById('setup-pays').style.display = 'none';
+      document.getElementById('setup-formation').style.display = 'block';
+      afficherFormations('attaque');
+      startTimerSetup('timer-formation', 30, () => confirmerFormation());
+    }
+
+    function setTypeFormation(type, btn) {
+      typeFormation = type;
+      document.getElementById('btn-attaque').style.background = type === 'attaque' ? '#e74c3c' : '#2e2b45';
+      document.getElementById('btn-defense').style.background = type === 'defense' ? '#3498db' : '#2e2b45';
+      afficherFormations(type);
+    }
+
+    function afficherFormations(type) {
+      const grid = document.getElementById('formation-grid');
+      grid.innerHTML = '';
+      FORMATIONS[type].forEach((f, i) => {
+        const btn = document.createElement('div');
+        btn.classList.add('formation-btn');
+        if (i === 2) btn.classList.add('choisi');
+        // Mini terrain
+        const preview = document.createElement('div');
+        preview.classList.add('formation-preview');
+        f.joueurs.forEach(([fx, fy]) => {
+          const dot = document.createElement('div');
+          dot.classList.add('joueur-dot');
+          dot.style.left = (fx * 100) + '%';
+          dot.style.top = (fy * 100) + '%';
+          preview.appendChild(dot);
+        });
+        const nom = document.createElement('div');
+        nom.classList.add('formation-nom');
+        nom.textContent = f.nom;
+        btn.appendChild(preview);
+        btn.appendChild(nom);
+        btn.onclick = () => {
+          formationSelectionnee = f;
+          document.querySelectorAll('.formation-btn').forEach(b => b.classList.remove('choisi'));
+          btn.classList.add('choisi');
+          document.getElementById('formation-selectionnee-nom').textContent = f.nom;
+        };
+        grid.appendChild(btn);
+      });
+      formationSelectionnee = FORMATIONS[type][2];
+      document.getElementById('formation-selectionnee-nom').textContent = FORMATIONS[type][2].nom;
+    }
+
+    function confirmerFormation() {
+      clearInterval(timerInterval);
+      if (estJ1) formationChoisie.j1 = formationSelectionnee;
+      else formationChoisie.j2 = formationSelectionnee;
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'choix_formation', formation: formationSelectionnee, estJ1: estJ1 },
+        pseudo: monPseudo
+      });
+      demarrerJeu();
+    }
+
+    function startTimerSetup(id, duree, callback) {
+      let t = duree;
+      document.getElementById(id).textContent = t;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        t--;
+        document.getElementById(id).textContent = t;
+        if (t <= 0) { clearInterval(timerInterval); callback(); }
+      }, 1000);
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'choix_pays') {
+        if (coup.estJ1) {
+          paysCourt.j1 = coup.pays;
+          document.getElementById('drapeau-j1').textContent = coup.pays.flag;
+          document.getElementById('jeu-drapeau-j1').textContent = coup.pays.flag;
+        } else {
+          paysCourt.j2 = coup.pays;
+          document.getElementById('drapeau-j2').textContent = coup.pays.flag;
+          document.getElementById('jeu-drapeau-j2').textContent = coup.pays.flag;
+        }
+      } else if (coup.type === 'choix_formation') {
+        if (coup.estJ1) formationChoisie.j1 = coup.formation;
+        else formationChoisie.j2 = coup.formation;
+      } else if (coup.type === 'action') {
+        traiterAction(coup);
+      } else if (coup.type === 'but') {
+        if (coup.estJ1) { scoreJ1++; document.getElementById('jeu-score-j1').textContent = scoreJ1; }
+        else { scoreJ2++; document.getElementById('jeu-score-j2').textContent = scoreJ2; }
+        ballPos = { x: W/2, y: H/2 };
+        possessionJ1 = !coup.estJ1;
+        document.getElementById('status').textContent = '⚽ BUT ! ' + (coup.estJ1 ? paysCourt.j1.flag : paysCourt.j2.flag);
+        setTimeout(() => {
+          if (scoreJ1 >= 3 || scoreJ2 >= 3) finPartie();
+          else { passes = 0; dessinerTerrain(); mettreAJourStatus(); }
+        }, 2000);
+      }
+    });
+
+    function demarrerJeu() {
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('jeu-nom-j1').textContent = document.getElementById('setup-nom-j1').textContent;
+      document.getElementById('jeu-nom-j2').textContent = document.getElementById('setup-nom-j2').textContent;
+      document.getElementById('jeu-drapeau-j1').textContent = paysCourt.j1.flag;
+      document.getElementById('jeu-drapeau-j2').textContent = paysCourt.j2.flag;
+      joueursPosJ1 = initPositions(formationChoisie.j1, true);
+      joueursPosJ2 = initPositions(formationChoisie.j2, false);
+      ballPos = { x: W/2, y: H/2 };
+      possessionJ1 = estJ1;
+      passes = 0;
+      partieTerminee = false;
+      scoreJ1 = 0; scoreJ2 = 0;
+      dessinerTerrain();
+      mettreAJourStatus();
+      startTimerJeu();
+    }
+
+    let timerJeu = 90, timerJeuInterval;
+    function startTimerJeu() {
+      timerJeu = 90;
+      clearInterval(timerJeuInterval);
+      timerJeuInterval = setInterval(() => {
+        timerJeu--;
+        document.getElementById('timer-bar').style.width = (timerJeu / 90 * 100) + '%';
+        if (timerJeu <= 0) { clearInterval(timerJeuInterval); finPartie(); }
+      }, 1000);
+    }
+
+    function mettreAJourStatus() {
+      const jaiBalle = (estJ1 && possessionJ1) || (!estJ1 && !possessionJ1);
+      if (jaiBalle) {
+        document.getElementById('status').textContent = '⚽ Tu as le ballon ! Passes: ' + passes + '/' + maxPasses;
+        document.getElementById('btn-passe').disabled = false;
+        document.getElementById('btn-tir').disabled = false;
+        document.getElementById('btn-sprint').disabled = false;
+      } else {
+        document.getElementById('status').textContent = '🛡️ L\'adversaire a le ballon...';
+        document.getElementById('btn-passe').disabled = true;
+        document.getElementById('btn-tir').disabled = true;
+        document.getElementById('btn-sprint').disabled = true;
+      }
+    }
+
+    function action(type) {
+      const jaiBalle = (estJ1 && possessionJ1) || (!estJ1 && !possessionJ1);
+      if (!jaiBalle || partieTerminee) return;
+      if (type === 'passe') {
+        passes++;
+        ballPos.y = estJ1 ? ballPos.y - 40 : ballPos.y + 40;
+        ballPos.x = W/2 + (Math.random() - 0.5) * 60;
+        ballPos.x = Math.max(20, Math.min(W-20, ballPos.x));
+        ballPos.y = Math.max(20, Math.min(H-20, ballPos.y));
+        document.getElementById('status').textContent = '⚡ Passe ! (' + passes + '/' + maxPasses + ')';
+        socket.emit('jouer_coup', { code: codePartie, coup: { type: 'action', action: 'passe', ballPos, estJ1, passes }, pseudo: monPseudo });
+        if (passes >= maxPasses) {
+          document.getElementById('status').textContent = '🎯 Maintenant tire !';
+        }
+        dessinerTerrain();
+      } else if (type === 'tir') {
+        const chance = passes >= 2 ? 0.6 : passes >= 1 ? 0.4 : 0.25;
+        const but = Math.random() < chance;
+        socket.emit('jouer_coup', { code: codePartie, coup: { type: 'tir', but, estJ1 }, pseudo: monPseudo });
+        if (but) {
+          if (estJ1) { scoreJ1++; document.getElementById('jeu-score-j1').textContent = scoreJ1; }
+          else { scoreJ2++; document.getElementById('jeu-score-j2').textContent = scoreJ2; }
+          document.getElementById('status').textContent = '⚽ BUT ! ' + (estJ1 ? paysCourt.j1.flag : paysCourt.j2.flag);
+          socket.emit('jouer_coup', { code: codePartie, coup: { type: 'but', estJ1 }, pseudo: monPseudo });
+          passes = 0;
+          ballPos = { x: W/2, y: H/2 };
+          possessionJ1 = !estJ1;
+          if (scoreJ1 >= 3 || scoreJ2 >= 3) { setTimeout(finPartie, 1500); }
+          else { setTimeout(() => { dessinerTerrain(); mettreAJourStatus(); }, 2000); }
+        } else {
+          document.getElementById('status').textContent = '😔 Tir raté ! L\'adversaire reprend...';
+          passes = 0;
+          possessionJ1 = !possessionJ1;
+          socket.emit('jouer_coup', { code: codePartie, coup: { type: 'action', action: 'tir_rate', ballPos, estJ1: !estJ1, passes: 0 }, pseudo: monPseudo });
+          setTimeout(() => { dessinerTerrain(); mettreAJourStatus(); }, 1500);
+        }
+        dessinerTerrain();
+      } else if (type === 'sprint') {
+        ballPos.y = estJ1 ? ballPos.y - 25 : ballPos.y + 25;
+        ballPos.y = Math.max(20, Math.min(H-20, ballPos.y));
+        document.getElementById('status').textContent = '💨 Sprint !';
+        socket.emit('jouer_coup', { code: codePartie, coup: { type: 'action', action: 'sprint', ballPos, estJ1 }, pseudo: monPseudo });
+        dessinerTerrain();
+      }
+    }
+
+    function traiterAction(coup) {
+      if (coup.action === 'passe' || coup.action === 'sprint') {
+        ballPos = coup.ballPos;
+        possessionJ1 = coup.estJ1;
+        passes = coup.passes || 0;
+        dessinerTerrain();
+        mettreAJourStatus();
+      } else if (coup.action === 'tir_rate') {
+        possessionJ1 = coup.estJ1;
+        passes = 0;
+        ballPos = { x: W/2, y: H/2 };
+        dessinerTerrain();
+        mettreAJourStatus();
+      }
+    }
+
+    function dessinerTerrain() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Fond gazon
+      ctx.fillStyle = '#2d7a2d';
+      ctx.fillRect(0, 0, W, H);
+
+      // Rayures gazon
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#2d7a2d' : '#3a9a3a';
+        ctx.fillRect(0, i * (H/8), W, H/8);
+      }
+
+      // Lignes terrain
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
+
+      // Bordure
+      ctx.strokeRect(20, 20, W-40, H-40);
+
+      // Ligne centrale
+      ctx.beginPath(); ctx.moveTo(20, H/2); ctx.lineTo(W-20, H/2); ctx.stroke();
+
+      // Cercle central
+      ctx.beginPath(); ctx.arc(W/2, H/2, 50, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(W/2, H/2, 4, 0, Math.PI*2); ctx.fillStyle = 'white'; ctx.fill();
+
+      // But haut
+      ctx.strokeRect(W/2-50, 20, 100, 30);
+      ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(W/2-50, 20, 100, 30);
+
+      // But bas
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.strokeRect(W/2-50, H-50, 100, 30);
+      ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(W/2-50, H-50, 100, 30);
+
+      // Surface de réparation haut
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.strokeRect(W/2-80, 20, 160, 70);
+      ctx.strokeRect(W/2-80, H-90, 160, 70);
+
+      // Joueurs J1 (bas) - drapeaux ronds
+      joueursPosJ1.forEach((j, i) => {
+        dessinerJoueur(j.x, j.y, paysCourt.j1.flag, estJ1);
+      });
+
+      // Joueurs J2 (haut) - drapeaux ronds
+      joueursPosJ2.forEach((j, i) => {
+        dessinerJoueur(j.x, j.y, paysCourt.j2.flag, !estJ1);
+      });
+
+      // Ballon
+      ctx.font = '22px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚽', ballPos.x, ballPos.y);
+
+      // Indicateur de possession
+      const jaiBalle = (estJ1 && possessionJ1) || (!estJ1 && !possessionJ1);
+      if (jaiBalle) {
+        ctx.beginPath();
+        ctx.arc(ballPos.x, ballPos.y, 16, 0, Math.PI*2);
+        ctx.strokeStyle = '#ffd93d';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function dessinerJoueur(x, y, flag, estMon) {
+      // Cercle fond
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI*2);
+      ctx.fillStyle = estMon ? 'rgba(78,205,196,0.3)' : 'rgba(255,107,107,0.3)';
+      ctx.fill();
+      ctx.strokeStyle = estMon ? '#4ecdc4' : '#ff6b6b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Aura
+      ctx.beginPath();
+      ctx.arc(x, y, 22, 0, Math.PI*2);
+      ctx.strokeStyle = estMon ? 'rgba(78,205,196,0.3)' : 'rgba(255,107,107,0.3)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Emoji drapeau
+      ctx.font = '18px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(flag, x, y);
+    }
+
+    function finPartie() {
+      clearInterval(timerJeuInterval);
+      partieTerminee = true;
+      let msg = '';
+      const nomJ1 = document.getElementById('jeu-nom-j1').textContent;
+      const nomJ2 = document.getElementById('jeu-nom-j2').textContent;
+      if (scoreJ1 > scoreJ2) msg = paysCourt.j1.flag + ' ' + nomJ1 + ' gagne ! (' + scoreJ1 + '-' + scoreJ2 + ')';
+      else if (scoreJ2 > scoreJ1) msg = paysCourt.j2.flag + ' ' + nomJ2 + ' gagne ! (' + scoreJ2 + '-' + scoreJ1 + ')';
+      else msg = '🤝 Match nul ! (' + scoreJ1 + '-' + scoreJ2 + ')';
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = '🏆 ' + msg;
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+    }
+
+    function rejouer() {
+      scoreJ1 = 0; scoreJ2 = 0; passes = 0;
+      document.getElementById('jeu-score-j1').textContent = '0';
+      document.getElementById('jeu-score-j2').textContent = '0';
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      demarrerJeu();
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
