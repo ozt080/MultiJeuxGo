@@ -1,1 +1,496 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Badminton - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#127992;</div><h2>Badminton</h2><p style='color:#9b96b8;'>2 joueurs - Renvoie le volant !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Badminton - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; margin: 0; }
+    .jeu-container { max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .score-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.85); padding: 10px 16px; }
+    .joueur-score { text-align: center; }
+    .joueur-nom { font-size: 12px; color: #9b96b8; }
+    .joueur-pts { font-size: 28px; font-weight: 900; color: white; }
+    .set-info { font-size: 11px; color: #ffd93d; }
+    .status-bar { background: rgba(0,0,0,0.8); padding: 10px; font-weight: 700; font-size: 13px; text-align: center; }
+    #terrain-canvas { width: 100%; display: block; cursor: pointer; }
+    .frappe-zone { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px 16px; background: rgba(0,0,0,0.8); }
+    .frappe-btn { padding: 14px 8px; border-radius: 10px; border: 2px solid #2e2b45; background: #1a1828; color: white; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .frappe-btn:hover { border-color: #7c5cbf; background: #2a1f4a; }
+    .frappe-btn:disabled { opacity: 0.3; cursor: default; }
+    .frappe-btn.actif { border-color: #4ecdc4; background: #1f3a2e; }
+    .gagnant-msg { font-size: 20px; font-weight: 900; color: #ffd93d; padding: 16px; }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin: 10px; }
+    .sets-bar { display: flex; justify-content: center; gap: 8px; padding: 6px; background: rgba(0,0,0,0.8); }
+    .set-cercle { width: 12px; height: 12px; border-radius: 50%; background: #2e2b45; }
+    .set-cercle.j1 { background: #4ecdc4; }
+    .set-cercle.j2 { background: #ff6b6b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">🏸</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">🏸 Badminton</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Premier à 21 points gagne le set ! Gagne 2 sets pour gagner le match !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="score-bar">
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j1">J1</div>
+          <div class="joueur-pts" id="pts-j1">0</div>
+          <div class="set-info" id="sets-j1">Sets: 0</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:#9b96b8;">SET <span id="num-set">1</span></div>
+          <div style="font-size:18px;">🏸</div>
+          <div style="font-size:11px;color:#9b96b8;">21 pts</div>
+        </div>
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j2">J2</div>
+          <div class="joueur-pts" id="pts-j2">0</div>
+          <div class="set-info" id="sets-j2">Sets: 0</div>
+        </div>
+      </div>
+
+      <div class="sets-bar" id="sets-bar"></div>
+      <div class="status-bar" id="status">En attente...</div>
+      <canvas id="terrain-canvas" width="440" height="500"></canvas>
+
+      <div class="frappe-zone" id="frappe-zone">
+        <button class="frappe-btn" onclick="frapper('gauche-fond')" id="btn-gf">↖️ Fond G</button>
+        <button class="frappe-btn" onclick="frapper('fond')" id="btn-f">⬆️ Fond</button>
+        <button class="frappe-btn" onclick="frapper('droite-fond')" id="btn-df">↗️ Fond D</button>
+        <button class="frappe-btn" onclick="frapper('gauche')" id="btn-g">⬅️ Gauche</button>
+        <button class="frappe-btn" onclick="frapper('smash')" id="btn-s" style="border-color:#ff6b6b;color:#ff6b6b;">💥 Smash</button>
+        <button class="frappe-btn" onclick="frapper('droite')" id="btn-d">➡️ Droite</button>
+        <button class="frappe-btn" onclick="frapper('gauche-filet')" id="btn-gfi">↙️ Filet G</button>
+        <button class="frappe-btn" onclick="frapper('filet')" id="btn-fi" style="border-color:#ffd93d;color:#ffd93d;">🪶 Filet</button>
+        <button class="frappe-btn" onclick="frapper('droite-filet')" id="btn-dfi">↘️ Filet D</button>
+      </div>
+
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    const canvas = document.getElementById('terrain-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 440, H = 500;
+
+    let codePartie='', monPseudo='', estJ1=false;
+    let ptsJ1=0, ptsJ2=0, setsJ1=0, setsJ2=0, numSet=1;
+    let historiqueSets=[];
+    let monTour=false, partieTerminee=false;
+    let volantPos={x:W/2, y:H/2};
+    let volantCible={x:W/2, y:H/2};
+    let joueurJ1={x:W/2, y:H*0.85};
+    let joueurJ2={x:W/2, y:H*0.15};
+    let animFrame=null;
+
+    // Zones de la raquette adverse selon le type de frappe
+    const ZONES_CIBLE = {
+      'fond':        { x:[0.3,0.7], y:[0.05,0.2] },
+      'gauche-fond': { x:[0.05,0.3], y:[0.05,0.2] },
+      'droite-fond': { x:[0.7,0.95], y:[0.05,0.2] },
+      'gauche':      { x:[0.05,0.25], y:[0.25,0.45] },
+      'droite':      { x:[0.75,0.95], y:[0.25,0.45] },
+      'smash':       { x:[0.2,0.8],   y:[0.3,0.5] },
+      'filet':       { x:[0.35,0.65], y:[0.45,0.55] },
+      'gauche-filet':{ x:[0.05,0.3],  y:[0.45,0.55] },
+      'droite-filet':{ x:[0.7,0.95],  y:[0.45,0.55] }
+    };
+
+    // Probabilité de rater selon le type
+    const PROBA_ERREUR = {
+      'fond':0.05, 'gauche-fond':0.08, 'droite-fond':0.08,
+      'gauche':0.06, 'droite':0.06,
+      'smash':0.15, 'filet':0.12,
+      'gauche-filet':0.14, 'droite-filet':0.14
+    };
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'badminton' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo || !code) { alert('Entre pseudo et code !'); return; }
+      estJ1 = false; codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      initialiserJeu();
+      if (estJ1) {
+        monTour = true;
+        document.getElementById('status').textContent = '🏸 Ton service ! Choisis où frapper';
+        activerBoutons(true);
+      } else {
+        monTour = false;
+        document.getElementById('status').textContent = '⏳ Service de ' + data.joueurs[0] + '...';
+        activerBoutons(false);
+      }
+      dessinerTerrain();
+    });
+
+    function initialiserJeu() {
+      ptsJ1=0; ptsJ2=0; setsJ1=0; setsJ2=0; numSet=1;
+      historiqueSets=[];
+      volantPos = {x:W/2, y:H/2};
+      joueurJ1 = {x:W/2, y:H*0.82};
+      joueurJ2 = {x:W/2, y:H*0.18};
+      mettreAJourScore();
+      mettreAJourSets();
+    }
+
+    function activerBoutons(actif) {
+      document.querySelectorAll('.frappe-btn').forEach(b => b.disabled = !actif);
+    }
+
+    function frapper(type) {
+      if (!monTour || partieTerminee) return;
+      monTour = false;
+      activerBoutons(false);
+
+      const zone = ZONES_CIBLE[type];
+      const erreur = Math.random() < PROBA_ERREUR[type];
+
+      let cibleX, cibleY;
+      if (erreur) {
+        // Filet ou hors limites
+        cibleX = W/2 + (Math.random()-0.5)*100;
+        cibleY = estJ1 ? H*0.52 : H*0.48;
+      } else {
+        cibleX = (zone.x[0] + Math.random()*(zone.x[1]-zone.x[0])) * W;
+        cibleY = (zone.y[0] + Math.random()*(zone.y[1]-zone.y[0])) * H;
+        if (!estJ1) cibleY = H - cibleY;
+      }
+
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'frappe', frappe: type, cibleX, cibleY, erreur, estJ1 },
+        pseudo: monPseudo
+      });
+
+      animerVolant(cibleX, cibleY, () => {
+        if (erreur) {
+          marquerPoint(!estJ1);
+          document.getElementById('status').textContent = '💨 Faute ! Point pour ' + (estJ1 ? document.getElementById('nom-j2').textContent : document.getElementById('nom-j1').textContent);
+        } else {
+          document.getElementById('status').textContent = '⏳ Adversaire renvoie...';
+        }
+      });
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'frappe') {
+        animerVolant(coup.cibleX, coup.cibleY, () => {
+          if (coup.erreur) {
+            marquerPoint(coup.estJ1);
+            document.getElementById('status').textContent = '💨 Faute ! Tu marques un point !';
+          } else {
+            monTour = true;
+            activerBoutons(true);
+            // Déplacer joueur adverse
+            joueurJ2.x = coup.cibleX;
+            document.getElementById('status').textContent = '🏸 Ton tour ! Renvoie le volant !';
+            dessinerTerrain();
+          }
+        });
+      } else if (coup.type === 'point') {
+        mettreAJourScore();
+        mettreAJourSets();
+        if (!partieTerminee) {
+          setTimeout(() => {
+            if (coup.serveur === (estJ1 ? 'j1' : 'j2')) {
+              monTour = true;
+              activerBoutons(true);
+              document.getElementById('status').textContent = '🏸 Ton service !';
+            } else {
+              monTour = false;
+              activerBoutons(false);
+              document.getElementById('status').textContent = '⏳ Service adverse...';
+            }
+          }, 1500);
+        }
+      }
+    });
+
+    function marquerPoint(pourJ1) {
+      if (pourJ1) ptsJ1++;
+      else ptsJ2++;
+      mettreAJourScore();
+
+      // Vérifier fin de set (21 points, écart de 2)
+      const maxPts = Math.max(ptsJ1, ptsJ2);
+      const minPts = Math.min(ptsJ1, ptsJ2);
+      if (maxPts >= 21 && maxPts - minPts >= 2) {
+        const gagnantSet = ptsJ1 > ptsJ2 ? 'j1' : 'j2';
+        if (gagnantSet === 'j1') setsJ1++;
+        else setsJ2++;
+        historiqueSets.push(gagnantSet);
+        mettreAJourSets();
+        document.getElementById('status').textContent = '🏆 Set ' + numSet + ' gagné par ' + (gagnantSet === 'j1' ? document.getElementById('nom-j1').textContent : document.getElementById('nom-j2').textContent) + ' !';
+
+        if (setsJ1 >= 2 || setsJ2 >= 2) {
+          setTimeout(finMatch, 1500);
+          return;
+        }
+
+        // Nouveau set
+        numSet++;
+        ptsJ1 = 0; ptsJ2 = 0;
+        document.getElementById('num-set').textContent = numSet;
+        mettreAJourScore();
+        volantPos = {x:W/2, y:H/2};
+        dessinerTerrain();
+      }
+
+      const serveur = pourJ1 ? 'j1' : 'j2';
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'point', pourJ1, ptsJ1, ptsJ2, setsJ1, setsJ2, serveur },
+        pseudo: monPseudo
+      });
+
+      setTimeout(() => {
+        const monService = serveur === (estJ1 ? 'j1' : 'j2');
+        if (monService) {
+          monTour = true;
+          activerBoutons(true);
+          document.getElementById('status').textContent = '🏸 Ton service !';
+        } else {
+          monTour = false;
+          activerBoutons(false);
+          document.getElementById('status').textContent = '⏳ Service adverse...';
+        }
+        dessinerTerrain();
+      }, 1500);
+    }
+
+    function mettreAJourScore() {
+      document.getElementById('pts-j1').textContent = ptsJ1;
+      document.getElementById('pts-j2').textContent = ptsJ2;
+    }
+
+    function mettreAJourSets() {
+      document.getElementById('sets-j1').textContent = 'Sets: ' + setsJ1;
+      document.getElementById('sets-j2').textContent = 'Sets: ' + setsJ2;
+      const bar = document.getElementById('sets-bar');
+      bar.innerHTML = '';
+      historiqueSets.forEach(g => {
+        const c = document.createElement('div');
+        c.classList.add('set-cercle', g);
+        bar.appendChild(c);
+      });
+    }
+
+    function animerVolant(cibleX, cibleY, callback) {
+      const startX = volantPos.x, startY = volantPos.y;
+      const duration = 600;
+      const startTime = performance.now();
+
+      function animate(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        volantPos.x = startX + (cibleX - startX) * eased;
+        volantPos.y = startY + (cibleY - startY) * eased;
+
+        // Arc du volant
+        const arc = Math.sin(progress * Math.PI) * 80;
+        const displayY = volantPos.y - arc;
+
+        dessinerTerrain(displayY);
+
+        if (progress < 1) {
+          animFrame = requestAnimationFrame(animate);
+        } else {
+          volantPos = { x: cibleX, y: cibleY };
+          dessinerTerrain();
+          if (callback) callback();
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function dessinerTerrain(volantDisplayY) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Fond terrain bois
+      ctx.fillStyle = '#8B6914';
+      ctx.fillRect(0, 0, W, H);
+
+      // Planches de bois
+      for (let i = 0; i < 12; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#8B6914' : '#7a5c10';
+        ctx.fillRect(0, i * (H/12), W, H/12);
+      }
+
+      // Lignes terrain
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+
+      // Bordure extérieure
+      ctx.strokeRect(15, 15, W-30, H-30);
+
+      // Ligne centrale (filet)
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(15, H/2); ctx.lineTo(W-15, H/2); ctx.stroke();
+
+      // Ligne de service
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.beginPath(); ctx.moveTo(15, H*0.35); ctx.lineTo(W-15, H*0.35); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(15, H*0.65); ctx.lineTo(W-15, H*0.65); ctx.stroke();
+
+      // Ligne centrale verticale
+      ctx.beginPath(); ctx.moveTo(W/2, 15); ctx.lineTo(W/2, H-15); ctx.stroke();
+
+      // Doubles (lignes latérales)
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath(); ctx.moveTo(30, 15); ctx.lineTo(30, H-15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W-30, 15); ctx.lineTo(W-30, H-15); ctx.stroke();
+
+      // Filet (ombre)
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(15, H/2 - 3, W-30, 6);
+      ctx.fillStyle = '#444';
+      ctx.fillRect(15, H/2 - 2, W-30, 4);
+
+      // Poteaux du filet
+      ctx.fillStyle = '#888';
+      ctx.fillRect(13, H/2 - 20, 4, 40);
+      ctx.fillRect(W-17, H/2 - 20, 4, 40);
+
+      // Joueur J1 (bas)
+      dessinerJoueur(joueurJ1.x, joueurJ1.y, estJ1 ? '🟦' : '🟥', document.getElementById('nom-j1').textContent, true);
+
+      // Joueur J2 (haut)
+      dessinerJoueur(joueurJ2.x, joueurJ2.y, estJ1 ? '🟥' : '🟦', document.getElementById('nom-j2').textContent, false);
+
+      // Volant
+      const vy = volantDisplayY !== undefined ? volantDisplayY : volantPos.y;
+      ctx.font = '20px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🏸', volantPos.x, vy);
+
+      // Ombre du volant
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath();
+      ctx.ellipse(volantPos.x, volantPos.y, 8, 4, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function dessinerJoueur(x, y, emoji, nom, estBas) {
+      // Corps joueur
+      ctx.font = '28px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Ombre
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(x + 2, y + 4, 16, 8, 0, 0, Math.PI*2);
+      ctx.fill();
+
+      // Joueur
+      ctx.fillText('🏃', x, y);
+
+      // Raquette
+      ctx.font = '18px serif';
+      ctx.fillText('🏸', x + (estBas ? 16 : -16), y + (estBas ? -10 : 10));
+
+      // Nom
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(x - 25, y + (estBas ? 12 : -26), 50, 14);
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 10px Nunito';
+      ctx.fillText(nom.substring(0, 8), x, y + (estBas ? 19 : -19));
+    }
+
+    function finMatch() {
+      partieTerminee = true;
+      activerBoutons(false);
+      const nomJ1 = document.getElementById('nom-j1').textContent;
+      const nomJ2 = document.getElementById('nom-j2').textContent;
+      let msg = '';
+      if (setsJ1 > setsJ2) msg = '🏆 ' + nomJ1 + ' gagne le match ! (' + setsJ1 + '-' + setsJ2 + ')';
+      else msg = '🏆 ' + nomJ2 + ' gagne le match ! (' + setsJ2 + '-' + setsJ1 + ')';
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = msg;
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+      document.getElementById('status').textContent = '🎉 Match terminé !';
+    }
+
+    function rejouer() {
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      initialiserJeu();
+      partieTerminee = false;
+      dessinerTerrain();
+      if (estJ1) {
+        monTour = true;
+        activerBoutons(true);
+        document.getElementById('status').textContent = '🏸 Ton service !';
+      } else {
+        monTour = false;
+        activerBoutons(false);
+        document.getElementById('status').textContent = '⏳ Service adverse...';
+      }
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
