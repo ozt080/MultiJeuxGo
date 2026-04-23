@@ -1,1 +1,661 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Billard - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#127921;</div><h2>Billard</h2><p style='color:#9b96b8;'>2 joueurs - Vise et empoche !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Billard - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; margin: 0; }
+    .jeu-container { max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .score-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.85); padding: 10px 16px; }
+    .joueur-score { text-align: center; }
+    .joueur-nom { font-size: 12px; color: #9b96b8; }
+    .joueur-pts { font-size: 24px; font-weight: 900; }
+    .joueur-type { font-size: 11px; margin-top: 2px; }
+    .status-bar { background: rgba(0,0,0,0.8); padding: 10px; font-weight: 700; font-size: 13px; text-align: center; min-height: 38px; }
+    #billard-canvas { width: 100%; display: block; cursor: crosshair; touch-action: none; }
+    .controls { display: flex; gap: 8px; padding: 10px 16px; background: rgba(0,0,0,0.8); align-items: center; }
+    .puissance-label { font-size: 12px; color: #9b96b8; white-space: nowrap; }
+    .puissance-slider { flex: 1; }
+    .btn-tirer { padding: 10px 20px; border-radius: 50px; border: none; background: #e74c3c; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .btn-tirer:disabled { opacity: 0.4; cursor: default; }
+    .boules-bar { display: flex; gap: 4px; padding: 8px 16px; background: rgba(0,0,0,0.8); flex-wrap: wrap; justify-content: center; }
+    .boule-indicator { width: 20px; height: 20px; border-radius: 50%; opacity: 0.4; border: 1px solid rgba(255,255,255,0.3); }
+    .boule-indicator.empochee { opacity: 1; }
+    .gagnant-msg { font-size: 20px; font-weight: 900; color: #ffd93d; padding: 16px; background: rgba(0,0,0,0.9); }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">🎱</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">🎱 Billard 8-Ball</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Empoche toutes tes boules puis la noire pour gagner !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="score-bar">
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j1">J1</div>
+          <div class="joueur-pts" id="pts-j1" style="color:#f39c12;">●●●●●●●</div>
+          <div class="joueur-type" id="type-j1" style="color:#f39c12;">Pleines</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:24px;">🎱</div>
+          <div style="font-size:11px;color:#9b96b8;">8-Ball</div>
+        </div>
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j2">J2</div>
+          <div class="joueur-pts" id="pts-j2" style="color:#8e44ad;">○○○○○○○</div>
+          <div class="joueur-type" id="type-j2" style="color:#8e44ad;">Rayées</div>
+        </div>
+      </div>
+
+      <div class="boules-bar" id="boules-bar"></div>
+      <div class="status-bar" id="status">Chargement...</div>
+      <canvas id="billard-canvas" width="440" height="320"></canvas>
+      <div class="controls">
+        <span class="puissance-label">💪 Force:</span>
+        <input type="range" class="puissance-slider" id="puissance" min="1" max="10" value="5"/>
+        <span style="font-size:13px;font-weight:700;min-width:20px;" id="puissance-val">5</span>
+        <button class="btn-tirer" id="btn-tirer" onclick="tirer()">🎯 Tirer</button>
+      </div>
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    const canvas = document.getElementById('billard-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 440, H = 320;
+    const R = 10; // rayon boule
+
+    // Couleurs des boules
+    const COULEURS_BOULES = {
+      1:'#f39c12', 2:'#2980b9', 3:'#e74c3c', 4:'#8e44ad',
+      5:'#e67e22', 6:'#27ae60', 7:'#c0392b', 8:'#1a1828',
+      9:'#f39c12', 10:'#2980b9', 11:'#e74c3c', 12:'#8e44ad',
+      13:'#e67e22', 14:'#27ae60', 15:'#c0392b'
+    };
+
+    let codePartie='', monPseudo='', estJ1=false;
+    let monTour=false, partieTerminee=false;
+    let monType='', advType=''; // 'pleine' ou 'rayee'
+    let typeAssigne=false;
+    let angleVise=0;
+    let isDragging=false;
+    let animEnCours=false;
+
+    // État du jeu
+    let boules = [];
+    let bouleBlanche = {x:0, y:0, vx:0, vy:0, active:true};
+    let empocheesJ1=[], empocheesJ2=[];
+
+    function initBoules() {
+      boules = [];
+      bouleBlanche = {x:W*0.28, y:H/2, vx:0, vy:0, active:true};
+
+      // Triangle de boules
+      const startX = W*0.65, startY = H/2;
+      const ordre = [1,9,2,10,8,3,11,4,12,5,13,6,14,7,15];
+      let idx = 0;
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col <= row; col++) {
+          const bx = startX + row * (R*2.1);
+          const by = startY + (col - row/2) * (R*2.1);
+          boules.push({
+            id: ordre[idx],
+            x: bx, y: by,
+            vx: 0, vy: 0,
+            active: true,
+            type: ordre[idx] <= 7 ? 'pleine' : ordre[idx] === 8 ? 'noire' : 'rayee'
+          });
+          idx++;
+        }
+      }
+      empocheesJ1=[]; empocheesJ2=[];
+      typeAssigne=false; monType=''; advType='';
+      mettreAJourBouleBar();
+    }
+
+    function mettreAJourBouleBar() {
+      const bar = document.getElementById('boules-bar');
+      bar.innerHTML = '';
+      boules.forEach(b => {
+        if (b.id === 8) return;
+        const div = document.createElement('div');
+        div.classList.add('boule-indicator');
+        if (!b.active) div.classList.add('empochee');
+        div.style.background = COULEURS_BOULES[b.id];
+        if (b.type === 'rayee') {
+          div.style.background = `linear-gradient(${COULEURS_BOULES[b.id]}, white, ${COULEURS_BOULES[b.id]})`;
+        }
+        bar.appendChild(div);
+      });
+    }
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'billard' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo || !code) { alert('Entre pseudo et code !'); return; }
+      estJ1 = false; codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      initBoules();
+      monTour = estJ1;
+      partieTerminee = false;
+      mettreAJourStatus();
+      dessiner();
+    });
+
+    // Viser avec la souris/touch
+    canvas.addEventListener('mousemove', (e) => {
+      if (!monTour || animEnCours || partieTerminee) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (W / rect.width);
+      const my = (e.clientY - rect.top) * (H / rect.height);
+      angleVise = Math.atan2(my - bouleBlanche.y, mx - bouleBlanche.x);
+      dessiner();
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!monTour || animEnCours || partieTerminee) return;
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const mx = (touch.clientX - rect.left) * (W / rect.width);
+      const my = (touch.clientY - rect.top) * (H / rect.height);
+      angleVise = Math.atan2(my - bouleBlanche.y, mx - bouleBlanche.x);
+      dessiner();
+    }, { passive: false });
+
+    document.getElementById('puissance').addEventListener('input', function() {
+      document.getElementById('puissance-val').textContent = this.value;
+      dessiner();
+    });
+
+    function tirer() {
+      if (!monTour || animEnCours || partieTerminee) return;
+      const puissance = parseInt(document.getElementById('puissance').value);
+      const vitesse = puissance * 3;
+      bouleBlanche.vx = Math.cos(angleVise) * vitesse;
+      bouleBlanche.vy = Math.sin(angleVise) * vitesse;
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'tir', angle: angleVise, puissance, bx: bouleBlanche.x, by: bouleBlanche.y },
+        pseudo: monPseudo
+      });
+      document.getElementById('btn-tirer').disabled = true;
+      monTour = false;
+      lancerAnimation();
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'tir') {
+        bouleBlanche.x = coup.bx;
+        bouleBlanche.y = coup.by;
+        bouleBlanche.vx = Math.cos(coup.angle) * coup.puissance * 3;
+        bouleBlanche.vy = Math.sin(coup.angle) * coup.puissance * 3;
+        lancerAnimation();
+      } else if (coup.type === 'etat') {
+        // Synchroniser l'état
+        boules = coup.boules;
+        bouleBlanche = coup.bouleBlanche;
+        empocheesJ1 = coup.empocheesJ1 || [];
+        empocheesJ2 = coup.empocheesJ2 || [];
+        if (coup.typeJ1) {
+          typeAssigne = true;
+          monType = estJ1 ? coup.typeJ1 : coup.typeJ2;
+          advType = estJ1 ? coup.typeJ2 : coup.typeJ1;
+          mettreAJourTypes();
+        }
+        monTour = (estJ1 && coup.tourJ1) || (!estJ1 && !coup.tourJ1);
+        mettreAJourStatus();
+        mettreAJourBouleBar();
+        dessiner();
+      }
+    });
+
+    function lancerAnimation() {
+      animEnCours = true;
+      document.getElementById('btn-tirer').disabled = true;
+      let empocheesAvant = boules.filter(b => !b.active).map(b => b.id);
+
+      function step() {
+        let enMouvement = false;
+
+        // Bouger la boule blanche
+        if (Math.abs(bouleBlanche.vx) > 0.1 || Math.abs(bouleBlanche.vy) > 0.1) {
+          bouleBlanche.x += bouleBlanche.vx;
+          bouleBlanche.y += bouleBlanche.vy;
+          bouleBlanche.vx *= 0.985;
+          bouleBlanche.vy *= 0.985;
+          enMouvement = true;
+
+          // Rebond murs
+          if (bouleBlanche.x - R < 15) { bouleBlanche.x = 15 + R; bouleBlanche.vx = Math.abs(bouleBlanche.vx); }
+          if (bouleBlanche.x + R > W-15) { bouleBlanche.x = W-15-R; bouleBlanche.vx = -Math.abs(bouleBlanche.vx); }
+          if (bouleBlanche.y - R < 15) { bouleBlanche.y = 15 + R; bouleBlanche.vy = Math.abs(bouleBlanche.vy); }
+          if (bouleBlanche.y + R > H-15) { bouleBlanche.y = H-15-R; bouleBlanche.vy = -Math.abs(bouleBlanche.vy); }
+
+          // Poches (6 coins/milieux)
+          const poches = [
+            {x:15,y:15},{x:W/2,y:12},{x:W-15,y:15},
+            {x:15,y:H-15},{x:W/2,y:H-12},{x:W-15,y:H-15}
+          ];
+          poches.forEach(p => {
+            if (Math.hypot(bouleBlanche.x-p.x, bouleBlanche.y-p.y) < 18) {
+              // Boule blanche empochée — faute !
+              bouleBlanche.x = W*0.28; bouleBlanche.y = H/2;
+              bouleBlanche.vx = 0; bouleBlanche.vy = 0;
+              document.getElementById('status').textContent = '⚠️ Faute ! Boule blanche empochée !';
+            }
+          });
+
+          // Collisions avec boules
+          boules.forEach(b => {
+            if (!b.active) return;
+            const dx = bouleBlanche.x - b.x;
+            const dy = bouleBlanche.y - b.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < R*2) {
+              const nx = dx/dist, ny = dy/dist;
+              const dot = bouleBlanche.vx*nx + bouleBlanche.vy*ny;
+              bouleBlanche.vx -= 2*dot*nx;
+              bouleBlanche.vy -= 2*dot*ny;
+              b.vx += dot*nx*1.5;
+              b.vy += dot*ny*1.5;
+              const overlap = R*2 - dist;
+              bouleBlanche.x += nx*overlap/2;
+              bouleBlanche.y += ny*overlap/2;
+              b.x -= nx*overlap/2;
+              b.y -= ny*overlap/2;
+            }
+          });
+        } else {
+          bouleBlanche.vx = 0; bouleBlanche.vy = 0;
+        }
+
+        // Bouger les autres boules
+        boules.forEach(b => {
+          if (!b.active) return;
+          if (Math.abs(b.vx) > 0.1 || Math.abs(b.vy) > 0.1) {
+            b.x += b.vx; b.y += b.vy;
+            b.vx *= 0.982; b.vy *= 0.982;
+            enMouvement = true;
+
+            // Rebond murs
+            if (b.x - R < 15) { b.x = 15+R; b.vx = Math.abs(b.vx); }
+            if (b.x + R > W-15) { b.x = W-15-R; b.vx = -Math.abs(b.vx); }
+            if (b.y - R < 15) { b.y = 15+R; b.vy = Math.abs(b.vy); }
+            if (b.y + R > H-15) { b.y = H-15-R; b.vy = -Math.abs(b.vy); }
+
+            // Poches
+            const poches = [
+              {x:15,y:15},{x:W/2,y:12},{x:W-15,y:15},
+              {x:15,y:H-15},{x:W/2,y:H-12},{x:W-15,y:H-15}
+            ];
+            poches.forEach(p => {
+              if (b.active && Math.hypot(b.x-p.x, b.y-p.y) < 18) {
+                b.active = false;
+                b.vx = 0; b.vy = 0;
+                traiterEmpochage(b);
+              }
+            });
+
+            // Collisions entre boules
+            boules.forEach(b2 => {
+              if (b2.id === b.id || !b2.active) return;
+              const dx = b.x - b2.x, dy = b.y - b2.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist < R*2 && dist > 0) {
+                const nx = dx/dist, ny = dy/dist;
+                const dv = (b.vx-b2.vx)*nx + (b.vy-b2.vy)*ny;
+                if (dv < 0) {
+                  b.vx -= dv*nx; b.vy -= dv*ny;
+                  b2.vx += dv*nx; b2.vy += dv*ny;
+                  const overlap = R*2-dist;
+                  b.x += nx*overlap/2; b.y += ny*overlap/2;
+                  b2.x -= nx*overlap/2; b2.y -= ny*overlap/2;
+                }
+              }
+            });
+          } else {
+            b.vx = 0; b.vy = 0;
+          }
+        });
+
+        dessiner();
+
+        if (enMouvement) {
+          requestAnimationFrame(step);
+        } else {
+          animEnCours = false;
+          finAnimation(empocheesAvant);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function traiterEmpochage(b) {
+      if (b.id === 8) {
+        // Boule noire empochée
+        setTimeout(() => verifierFinPartie8(), 500);
+        return;
+      }
+      if (!typeAssigne) {
+        // Première boule empochée → assigne les types
+        typeAssigne = true;
+        if (estJ1 && monTour) {
+          monType = b.type;
+          advType = b.type === 'pleine' ? 'rayee' : 'pleine';
+        } else if (!estJ1 && !monTour) {
+          monType = b.type;
+          advType = b.type === 'pleine' ? 'rayee' : 'pleine';
+        } else {
+          advType = b.type;
+          monType = b.type === 'pleine' ? 'rayee' : 'pleine';
+        }
+        mettreAJourTypes();
+      }
+      // Attribuer la boule au bon joueur
+      const tourJ1 = (estJ1 && monTour) || (!estJ1 && !monTour);
+      if ((tourJ1 && b.type === (estJ1 ? monType : advType)) ||
+          (!tourJ1 && b.type === (!estJ1 ? monType : advType))) {
+        if (estJ1 ? monTour : !monTour) empocheesJ1.push(b.id);
+        else empocheesJ2.push(b.id);
+      } else {
+        if (estJ1 ? monTour : !monTour) empocheesJ2.push(b.id);
+        else empocheesJ1.push(b.id);
+      }
+      mettreAJourBouleBar();
+    }
+
+    function mettreAJourTypes() {
+      const nomJ1 = document.getElementById('nom-j1').textContent;
+      const nomJ2 = document.getElementById('nom-j2').textContent;
+      const typeJ1 = estJ1 ? monType : advType;
+      const typeJ2 = estJ1 ? advType : monType;
+      document.getElementById('type-j1').textContent = typeJ1 === 'pleine' ? '● Pleines' : '○ Rayées';
+      document.getElementById('type-j2').textContent = typeJ2 === 'pleine' ? '● Pleines' : '○ Rayées';
+    }
+
+    function finAnimation(empocheesAvant) {
+      const nouvellesEmpochees = boules.filter(b => !b.active && !empocheesAvant.includes(b.id) && b.id !== 8);
+
+      // Synchroniser avec l'adversaire
+      const tourJ1 = (estJ1 && monTour) || (!estJ1 && !monTour);
+      const prochainTourJ1 = nouvellesEmpochees.length > 0 ? tourJ1 : !tourJ1;
+
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: {
+          type: 'etat',
+          boules: boules,
+          bouleBlanche: bouleBlanche,
+          empocheesJ1: empocheesJ1,
+          empocheesJ2: empocheesJ2,
+          tourJ1: prochainTourJ1,
+          typeJ1: estJ1 ? monType : advType,
+          typeJ2: estJ1 ? advType : monType
+        },
+        pseudo: monPseudo
+      });
+
+      monTour = estJ1 ? prochainTourJ1 : !prochainTourJ1;
+
+      if (nouvellesEmpochees.length > 0) {
+        document.getElementById('status').textContent = '🎱 Bien joué ! ' + nouvellesEmpochees.length + ' boule(s) empochée(s) ! Rejoue !';
+      }
+
+      mettreAJourStatus();
+      mettreAJourBouleBar();
+
+      if (monTour && !partieTerminee) {
+        document.getElementById('btn-tirer').disabled = false;
+      }
+    }
+
+    function verifierFinPartie8() {
+      const mesBoules = boules.filter(b => b.type === monType && b.active);
+      if (mesBoules.length === 0) {
+        // J'avais fini mes boules → j'ai gagné !
+        terminerPartie(true);
+      } else {
+        // Pas fini mes boules → j'ai perdu !
+        terminerPartie(false);
+      }
+    }
+
+    function terminerPartie(jaiGagne) {
+      partieTerminee = true;
+      document.getElementById('btn-tirer').disabled = true;
+      const monNom = estJ1 ? document.getElementById('nom-j1').textContent : document.getElementById('nom-j2').textContent;
+      const advNom = estJ1 ? document.getElementById('nom-j2').textContent : document.getElementById('nom-j1').textContent;
+      let msg = jaiGagne ? '🏆 ' + monNom + ' a gagné !' : '🏆 ' + advNom + ' a gagné !';
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = msg;
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+      document.getElementById('status').textContent = '🎱 Partie terminée !';
+    }
+
+    function mettreAJourStatus() {
+      if (partieTerminee) return;
+      if (monTour) {
+        document.getElementById('status').textContent = '🎱 Ton tour ! Vise et tire !';
+        document.getElementById('btn-tirer').disabled = animEnCours;
+      } else {
+        document.getElementById('status').textContent = '⏳ Tour de l\'adversaire...';
+        document.getElementById('btn-tirer').disabled = true;
+      }
+    }
+
+    function dessiner() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Fond tapis vert
+      ctx.fillStyle = '#1a6b1a';
+      ctx.fillRect(0, 0, W, H);
+
+      // Texture tapis
+      ctx.fillStyle = '#1d721d';
+      for (let i = 0; i < W; i += 20) {
+        ctx.fillRect(i, 0, 10, H);
+      }
+
+      // Bord en bois
+      ctx.fillStyle = '#5c3a1e';
+      ctx.fillRect(0, 0, W, 15);
+      ctx.fillRect(0, H-15, W, 15);
+      ctx.fillRect(0, 0, 15, H);
+      ctx.fillRect(W-15, 0, 15, H);
+
+      // Poches
+      const poches = [
+        {x:15,y:15},{x:W/2,y:12},{x:W-15,y:15},
+        {x:15,y:H-15},{x:W/2,y:H-12},{x:W-15,y:H-15}
+      ];
+      poches.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Ligne de départ
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W*0.28, 15);
+      ctx.lineTo(W*0.28, H-15);
+      ctx.stroke();
+
+      // Indicateur de visée
+      if (monTour && !animEnCours && !partieTerminee) {
+        const puissance = parseInt(document.getElementById('puissance').value);
+        const longueur = puissance * 15;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(bouleBlanche.x, bouleBlanche.y);
+        ctx.lineTo(
+          bouleBlanche.x + Math.cos(angleVise) * longueur,
+          bouleBlanche.y + Math.sin(angleVise) * longueur
+        );
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Triangle de direction
+        const tx = bouleBlanche.x + Math.cos(angleVise) * (longueur + 8);
+        const ty = bouleBlanche.y + Math.sin(angleVise) * (longueur + 8);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.beginPath();
+        ctx.arc(tx, ty, 4, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      // Boules de jeu
+      boules.forEach(b => {
+        if (!b.active) return;
+        dessinerBoule(b.x, b.y, b.id, b.type);
+      });
+
+      // Boule blanche
+      if (bouleBlanche.active) {
+        ctx.beginPath();
+        ctx.arc(bouleBlanche.x, bouleBlanche.y, R, 0, Math.PI*2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Reflet
+        ctx.beginPath();
+        ctx.arc(bouleBlanche.x - 3, bouleBlanche.y - 3, 3, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fill();
+      }
+    }
+
+    function dessinerBoule(x, y, id, type) {
+      const couleur = COULEURS_BOULES[id];
+
+      // Ombre
+      ctx.beginPath();
+      ctx.arc(x+1, y+2, R, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fill();
+
+      // Corps
+      ctx.beginPath();
+      ctx.arc(x, y, R, 0, Math.PI*2);
+      if (type === 'rayee') {
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        // Bande colorée
+        ctx.save();
+        ctx.clip();
+        ctx.fillStyle = couleur;
+        ctx.fillRect(x-R, y-R*0.5, R*2, R);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = couleur;
+        ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Cercle blanc avec numéro
+      ctx.beginPath();
+      ctx.arc(x, y, R*0.45, 0, Math.PI*2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+
+      // Numéro
+      ctx.fillStyle = '#333';
+      ctx.font = `bold ${R*0.7}px Nunito`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(id, x, y+0.5);
+
+      // Reflet
+      ctx.beginPath();
+      ctx.arc(x-3, y-3, 3, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fill();
+    }
+
+    function rejouer() {
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      initBoules();
+      monTour = estJ1;
+      partieTerminee = false;
+      animEnCours = false;
+      angleVise = 0;
+      document.getElementById('btn-tirer').disabled = !monTour;
+      mettreAJourStatus();
+      dessiner();
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
