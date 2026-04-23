@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tournois - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; }
+    .page { max-width: 480px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+    .tournoi-card { background: #1a1828; border-radius: 16px; padding: 16px; margin-bottom: 14px; border: 1px solid #2e2b45; cursor: pointer; transition: all 0.2s; }
+    .tournoi-card:hover { border-color: #7c5cbf; transform: translateY(-2px); }
+    .tournoi-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .tournoi-icon { font-size: 36px; }
+    .tournoi-titre { font-size: 16px; font-weight: 900; }
+    .tournoi-sous-titre { font-size: 12px; color: #9b96b8; margin-top: 2px; }
+    .tournoi-badge { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 700; margin-left: auto; }
+    .badge-ouvert { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid #4ecdc4; }
+    .badge-bientot { background: rgba(255,217,61,0.2); color: #ffd93d; border: 1px solid #ffd93d; }
+    .badge-termine { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid #ff6b6b; }
+    .tournoi-infos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .info-item { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center; }
+    .info-num { font-size: 16px; font-weight: 900; color: #a67cff; }
+    .info-label { font-size: 10px; color: #9b96b8; }
+    .bracket { margin-top: 12px; }
+    .bracket-titre { font-size: 13px; font-weight: 700; color: #9b96b8; margin-bottom: 8px; }
+    .match-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; }
+    .match-joueur { flex: 1; font-size: 13px; font-weight: 700; }
+    .match-score { font-size: 16px; font-weight: 900; color: #a67cff; padding: 0 8px; }
+    .match-joueur.gagnant { color: #4ecdc4; }
+    .match-joueur.perdant { color: #9b96b8; opacity: 0.6; }
+    .btn-inscrire { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn-inscrire:hover { background: #a67cff; }
+    .btn-inscrire:disabled { opacity: 0.5; cursor: default; background: #2e2b45; }
+    .inscrits-liste { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .inscrit-badge { background: rgba(124,92,191,0.2); border: 1px solid #7c5cbf; border-radius: 50px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #a67cff; }
+    .creer-tournoi-btn { width: 100%; padding: 14px; border-radius: 50px; border: 1.5px dashed #7c5cbf; background: rgba(124,92,191,0.1); color: #a67cff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 16px; transition: all 0.2s; }
+    .creer-tournoi-btn:hover { background: rgba(124,92,191,0.2); }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #1a1828; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; border: 1px solid #7c5cbf; }
+    .modal h3 { color: #a67cff; margin-bottom:16px; }
+    .modal input, .modal select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .modal select option { background: #1a1828; }
+    .modal-btns { display: flex; gap: 8px; }
+    .btn-cancel { flex: 1; padding: 12px; border-radius: 50px; background: #2e2b45; border: none; color: #9b96b8; font-family: 'Nunito', sans-serif; font-weight: 700; cursor: pointer; }
+    .btn-confirm { flex: 2; padding: 12px; border-radius: 50px; background: #7c5cbf; border: none; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:20px;">🏆</span>
+  </header>
+
+  <div class="page">
+    <h2 style="font-size:20px;font-weight:900;margin-bottom:16px;">🏆 Tournois</h2>
+
+    <button class="creer-tournoi-btn" onclick="ouvrirModal()">+ Créer un tournoi</button>
+
+    <div id="tournois-liste">
+      <!-- Tournois chargés dynamiquement -->
+    </div>
+  </div>
+
+  <!-- Modal créer tournoi -->
+  <div class="modal-overlay" id="modal-creer">
+    <div class="modal">
+      <h3>🏆 Créer un tournoi</h3>
+      <input id="nom-tournoi" type="text" placeholder="Nom du tournoi"/>
+      <select id="jeu-tournoi">
+        <option value="puissance4">🔴 Puissance 4</option>
+        <option value="memory">🧠 Memory</option>
+        <option value="quiz">❓ Quiz</option>
+        <option value="ludo">🎲 Ludo</option>
+        <option value="foot">⚽ Football</option>
+        <option value="badminton">🏸 Badminton</option>
+      </select>
+      <select id="nb-joueurs-tournoi">
+        <option value="4">4 joueurs</option>
+        <option value="8">8 joueurs</option>
+        <option value="16">16 joueurs</option>
+      </select>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="fermerModal()">Annuler</button>
+        <button class="btn-confirm" onclick="creerTournoi()">Créer !</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🎮</span><span>Jeux</span>
+    </a>
+    <a href="classement.html" class="nav-item">
+      <span class="nav-icon">🏆</span><span>Classement</span>
+    </a>
+    <a href="tournoi.html" class="nav-item active">
+      <span class="nav-icon">🎯</span><span>Tournois</span>
+    </a>
+    <a href="profil.html" class="nav-item">
+      <span class="nav-icon">👤</span><span>Profil</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+    import { collection, getDocs, addDoc, updateDoc, doc, getDoc, onSnapshot, arrayUnion, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+    const JEUX_EMOJI = { puissance4:'🔴', memory:'🧠', quiz:'❓', ludo:'🎲', foot:'⚽', badminton:'🏸' };
+    const JEUX_NOMS = { puissance4:'Puissance 4', memory:'Memory', quiz:'Quiz', ludo:'Ludo', foot:'Football', badminton:'Badminton' };
+
+    let currentUser = null;
+    let monPseudo = '';
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) monPseudo = snap.data().pseudo || 'Joueur';
+      }
+      chargerTournois();
+    });
+
+    function chargerTournois() {
+      const liste = document.getElementById('tournois-liste');
+      onSnapshot(collection(db, 'tournois'), (snap) => {
+        liste.innerHTML = '';
+        if (snap.empty) {
+          liste.innerHTML = '<div style="text-align:center;color:#9b96b8;padding:32px;font-size:14px;">Aucun tournoi pour l\'instant !<br/>Crée le premier ! 🎮</div>';
+          return;
+        }
+        const tournois = [];
+        snap.forEach(d => tournois.push({ id: d.id, ...d.data() }));
+        tournois.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        tournois.forEach(t => afficherTournoi(t, liste));
+      });
+    }
+
+    function afficherTournoi(t, container) {
+      const inscrits = t.inscrits || [];
+      const nbMax = t.nbJoueurs || 4;
+      const estInscrit = inscrits.includes(monPseudo);
+      const complet = inscrits.length >= nbMax;
+      const statut = t.statut || 'ouvert';
+
+      const div = document.createElement('div');
+      div.classList.add('tournoi-card');
+
+      let badgeHtml = '';
+      if (statut === 'ouvert') badgeHtml = '<span class="tournoi-badge badge-ouvert">✅ Ouvert</span>';
+      else if (statut === 'en-cours') badgeHtml = '<span class="tournoi-badge badge-bientot">⚡ En cours</span>';
+      else badgeHtml = '<span class="tournoi-badge badge-termine">🏁 Terminé</span>';
+
+      let bracketHtml = '';
+      if (t.matches && t.matches.length > 0) {
+        bracketHtml = '<div class="bracket"><div class="bracket-titre">📋 Matchs</div>';
+        t.matches.forEach(m => {
+          const g = m.gagnant;
+          bracketHtml += `<div class="match-row">
+            <div class="match-joueur ${g === m.j1 ? 'gagnant' : g ? 'perdant' : ''}">${m.j1 || '?'}</div>
+            <div class="match-score">${m.score1 || 0} - ${m.score2 || 0}</div>
+            <div class="match-joueur ${g === m.j2 ? 'gagnant' : g ? 'perdant' : ''}" style="text-align:right;">${m.j2 || '?'}</div>
+          </div>`;
+        });
+        bracketHtml += '</div>';
+      }
+
+      const inscritsHtml = inscrits.map(p => `<span class="inscrit-badge">${p}</span>`).join('');
+      const btnDisabled = estInscrit || complet || statut !== 'ouvert' ? 'disabled' : '';
+      const btnTexte = estInscrit ? '✅ Inscrit !' : complet ? '🔒 Complet' : statut !== 'ouvert' ? '🏁 Terminé' : `S'inscrire (${inscrits.length}/${nbMax})`;
+
+      div.innerHTML = `
+        <div class="tournoi-header">
+          <span class="tournoi-icon">${JEUX_EMOJI[t.jeu] || '🎮'}</span>
+          <div>
+            <div class="tournoi-titre">${t.nom}</div>
+            <div class="tournoi-sous-titre">${JEUX_NOMS[t.jeu] || t.jeu} • Créé par ${t.createur || '?'}</div>
+          </div>
+          ${badgeHtml}
+        </div>
+        <div class="tournoi-infos">
+          <div class="info-item">
+            <div class="info-num">${inscrits.length}/${nbMax}</div>
+            <div class="info-label">Joueurs</div>
+          </div>
+          <div class="info-item">
+            <div class="info-num">${t.jeu === 'quiz' ? '10' : t.jeu === 'memory' ? '16' : '3'}</div>
+            <div class="info-label">Rounds</div>
+          </div>
+          <div class="info-item">
+            <div class="info-num">🏅</div>
+            <div class="info-label">Prix: Gloire</div>
+          </div>
+        </div>
+        <div class="inscrits-liste">${inscritsHtml || '<span style="color:#9b96b8;font-size:12px;">Aucun inscrit</span>'}</div>
+        ${bracketHtml}
+        <button class="btn-inscrire" ${btnDisabled} onclick="sInscrire('${t.id}')">${btnTexte}</button>
+      `;
+      container.appendChild(div);
+    }
+
+    window.sInscrire = async function(tournoiId) {
+      if (!currentUser) { alert('Connecte-toi pour t\'inscrire !'); return; }
+      try {
+        await updateDoc(doc(db, 'tournois', tournoiId), {
+          inscrits: arrayUnion(monPseudo)
+        });
+        alert('✅ Tu es inscrit au tournoi !');
+      } catch(e) { alert('Erreur : ' + e.message); }
+    };
+
+    window.ouvrirModal = function() {
+      if (!currentUser) { alert('Connecte-toi pour créer un tournoi !'); return; }
+      document.getElementById('modal-creer').classList.add('show');
+    };
+
+    window.fermerModal = function() {
+      document.getElementById('modal-creer').classList.remove('show');
+    };
+
+    window.creerTournoi = async function() {
+      if (!currentUser) { alert('Connecte-toi !'); return; }
+      const nom = document.getElementById('nom-tournoi').value.trim();
+      const jeu = document.getElementById('jeu-tournoi').value;
+      const nbJoueurs = parseInt(document.getElementById('nb-joueurs-tournoi').value);
+      if (!nom) { alert('Entre un nom pour le tournoi !'); return; }
+      try {
+        await addDoc(collection(db, 'tournois'), {
+          nom: nom,
+          jeu: jeu,
+          nbJoueurs: nbJoueurs,
+          createur: monPseudo,
+          inscrits: [monPseudo],
+          statut: 'ouvert',
+          matches: [],
+          createdAt: serverTimestamp()
+        });
+        fermerModal();
+        alert('🏆 Tournoi créé ! Les joueurs peuvent s\'inscrire !');
+      } catch(e) { alert('Erreur : ' + e.message); }
+    };
+
+    document.getElementById('modal-creer').addEventListener('click', function(e) {
+      if (e.target === this) fermerModal();
+    });
+  </script>
+</body>
+</html>

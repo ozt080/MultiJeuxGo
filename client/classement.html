@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Classement - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; }
+    .page { max-width: 480px; margin: 0 auto; padding: 16px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
+    .tab { padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1.5px solid #2e2b45; background: #1a1828; color: #9b96b8; white-space: nowrap; transition: all 0.2s; }
+    .tab.actif { background: #7c5cbf; color: white; border-color: #7c5cbf; }
+    .classement-box { background: #1a1828; border-radius: 16px; border: 1px solid #2e2b45; overflow: hidden; margin-bottom: 16px; }
+    .classement-header { display: grid; grid-template-columns: 40px 1fr 60px 60px 60px; gap: 8px; padding: 10px 14px; background: #2e2b45; font-size: 11px; color: #9b96b8; font-weight: 700; text-transform: uppercase; }
+    .joueur-row { display: grid; grid-template-columns: 40px 1fr 60px 60px 60px; gap: 8px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; transition: background 0.2s; }
+    .joueur-row:hover { background: rgba(124,92,191,0.1); }
+    .joueur-row:last-child { border-bottom: none; }
+    .rang { font-size: 16px; font-weight: 900; text-align: center; }
+    .rang-1 { color: #ffd93d; }
+    .rang-2 { color: #c0c0c0; }
+    .rang-3 { color: #cd7f32; }
+    .joueur-info { display: flex; align-items: center; gap: 8px; }
+    .avatar-small { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
+    .joueur-pseudo { font-size: 14px; font-weight: 700; }
+    .joueur-niveau { font-size: 11px; color: #9b96b8; }
+    .stat { text-align: center; font-size: 13px; font-weight: 700; }
+    .stat.victoires { color: #4ecdc4; }
+    .stat.points { color: #a67cff; }
+    .stat.ratio { color: #ffd93d; }
+    .medaille-1 { background: linear-gradient(135deg, #ffd93d, #ff9500); }
+    .medaille-2 { background: linear-gradient(135deg, #c0c0c0, #888); }
+    .medaille-3 { background: linear-gradient(135deg, #cd7f32, #8b4513); }
+    .medaille-autre { background: linear-gradient(135deg, #7c5cbf, #4a3880); }
+    .mon-rang { background: rgba(124,92,191,0.15) !important; border-left: 3px solid #7c5cbf; }
+    .jeu-filtre { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .jeu-btn { padding: 6px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid #2e2b45; background: #1a1828; color: #9b96b8; transition: all 0.2s; }
+    .jeu-btn.actif { background: #1f3a2e; border-color: #4ecdc4; color: #4ecdc4; }
+    .loading { text-align: center; padding: 32px; color: #9b96b8; font-size: 14px; }
+    .mon-stats { background: linear-gradient(135deg, #1a1828, #2a1f4a); border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #7c5cbf; }
+    .mon-stats h3 { color: #a67cff; margin-bottom: 12px; font-size: 16px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat-item { text-align: center; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; }
+    .stat-num { font-size: 22px; font-weight: 900; color: #a67cff; }
+    .stat-label { font-size: 10px; color: #9b96b8; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:20px;">🏆</span>
+  </header>
+
+  <div class="page">
+    <h2 style="font-size:20px;font-weight:900;margin-bottom:16px;">🏆 Classement</h2>
+
+    <!-- Mes stats -->
+    <div class="mon-stats" id="mes-stats" style="display:none;">
+      <h3>📊 Mes statistiques</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-num" id="stat-victoires">0</div>
+          <div class="stat-label">Victoires</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="stat-parties">0</div>
+          <div class="stat-label">Parties</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="stat-points">0</div>
+          <div class="stat-label">Points</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtres par jeu -->
+    <div class="jeu-filtre">
+      <div class="jeu-btn actif" onclick="filtrerJeu('tous', this)">🎮 Tous</div>
+      <div class="jeu-btn" onclick="filtrerJeu('puissance4', this)">🔴 P4</div>
+      <div class="jeu-btn" onclick="filtrerJeu('memory', this)">🧠 Memory</div>
+      <div class="jeu-btn" onclick="filtrerJeu('quiz', this)">❓ Quiz</div>
+      <div class="jeu-btn" onclick="filtrerJeu('ludo', this)">🎲 Ludo</div>
+      <div class="jeu-btn" onclick="filtrerJeu('foot', this)">⚽ Foot</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab actif" onclick="setTab('global', this)">🌍 Global</div>
+      <div class="tab" onclick="setTab('semaine', this)">📅 Cette semaine</div>
+      <div class="tab" onclick="setTab('amis', this)">👥 Amis</div>
+    </div>
+
+    <!-- Classement -->
+    <div class="classement-box">
+      <div class="classement-header">
+        <div>#</div>
+        <div>Joueur</div>
+        <div style="text-align:center;">V</div>
+        <div style="text-align:center;">Pts</div>
+        <div style="text-align:center;">%</div>
+      </div>
+      <div id="classement-liste">
+        <div class="loading">⏳ Chargement...</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🎮</span><span>Jeux</span>
+    </a>
+    <a href="classement.html" class="nav-item active">
+      <span class="nav-icon">🏆</span><span>Classement</span>
+    </a>
+    <a href="chat.html" class="nav-item">
+      <span class="nav-icon">💬</span><span>Chat</span>
+    </a>
+    <a href="profil.html" class="nav-item">
+      <span class="nav-icon">👤</span><span>Profil</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+    import { collection, getDocs, doc, getDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+    let currentUser = null;
+    let tousLesJoueurs = [];
+    let jeuFiltre = 'tous';
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        await chargerMesStats(user.uid);
+        document.getElementById('mes-stats').style.display = 'block';
+      }
+      await chargerClassement();
+    });
+
+    async function chargerMesStats(uid) {
+      try {
+        const snap = await getDoc(doc(db, 'users', uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          const stats = data.stats || {};
+          document.getElementById('stat-victoires').textContent = stats.victoires || 0;
+          document.getElementById('stat-parties').textContent = stats.parties || 0;
+          document.getElementById('stat-points').textContent = stats.points || 0;
+        }
+      } catch(e) { console.log(e); }
+    }
+
+    async function chargerClassement() {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        tousLesJoueurs = [];
+        snap.forEach(d => {
+          const data = d.data();
+          const stats = data.stats || {};
+          tousLesJoueurs.push({
+            uid: d.id,
+            pseudo: data.pseudo || 'Joueur',
+            victoires: stats.victoires || 0,
+            parties: stats.parties || 0,
+            points: stats.points || 0,
+            ratio: stats.parties > 0 ? Math.round((stats.victoires / stats.parties) * 100) : 0
+          });
+        });
+        afficherClassement();
+      } catch(e) {
+        document.getElementById('classement-liste').innerHTML = '<div class="loading">Connecte-toi pour voir le classement !</div>';
+      }
+    }
+
+    function afficherClassement() {
+      let joueurs = [...tousLesJoueurs];
+      joueurs.sort((a, b) => b.points - a.points || b.victoires - a.victoires);
+      const liste = document.getElementById('classement-liste');
+      if (joueurs.length === 0) {
+        liste.innerHTML = '<div class="loading">Aucun joueur pour l\'instant ! Sois le premier ! 🎮</div>';
+        return;
+      }
+      liste.innerHTML = '';
+      joueurs.forEach((j, i) => {
+        const rang = i + 1;
+        const estMoi = currentUser && j.uid === currentUser.uid;
+        const div = document.createElement('div');
+        div.classList.add('joueur-row');
+        if (estMoi) div.classList.add('mon-rang');
+        let rangEmoji = rang;
+        if (rang === 1) rangEmoji = '🥇';
+        else if (rang === 2) rangEmoji = '🥈';
+        else if (rang === 3) rangEmoji = '🥉';
+        const couleurs = ['medaille-1','medaille-2','medaille-3','medaille-autre'];
+        const couleur = couleurs[Math.min(rang-1, 3)];
+        const initiale = (j.pseudo || 'J')[0].toUpperCase();
+        div.innerHTML = `
+          <div class="rang rang-${rang <= 3 ? rang : 'autre'}">${rangEmoji}</div>
+          <div class="joueur-info">
+            <div class="avatar-small ${couleur}">${initiale}</div>
+            <div>
+              <div class="joueur-pseudo">${j.pseudo}${estMoi ? ' 👈' : ''}</div>
+              <div class="joueur-niveau">Niveau ${Math.floor(j.points / 100) + 1}</div>
+            </div>
+          </div>
+          <div class="stat victoires">${j.victoires}</div>
+          <div class="stat points">${j.points}</div>
+          <div class="stat ratio">${j.ratio}%</div>
+        `;
+        liste.appendChild(div);
+      });
+    }
+
+    window.setTab = function(tab, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('actif'));
+      el.classList.add('actif');
+      afficherClassement();
+    };
+
+    window.filtrerJeu = function(jeu, el) {
+      jeuFiltre = jeu;
+      document.querySelectorAll('.jeu-btn').forEach(b => b.classList.remove('actif'));
+      el.classList.add('actif');
+      afficherClassement();
+    };
+  </script>
+</body>
+</html>
