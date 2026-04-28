@@ -1,1 +1,528 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Basket - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#127944;</div><h2>Basket</h2><p style='color:#9b96b8;'>2 joueurs - Lance et marque !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Basket - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; margin: 0; }
+    .jeu-container { max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .score-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.85); padding: 10px 16px; }
+    .joueur-score { text-align: center; }
+    .joueur-nom { font-size: 12px; color: #9b96b8; }
+    .joueur-pts { font-size: 32px; font-weight: 900; color: #f39c12; }
+    .timer-display { text-align: center; }
+    .timer-num { font-size: 24px; font-weight: 900; color: white; }
+    .timer-label { font-size: 10px; color: #9b96b8; }
+    .status-bar { background: rgba(0,0,0,0.8); padding: 10px; font-weight: 700; font-size: 13px; text-align: center; }
+    #basket-canvas { width: 100%; display: block; cursor: pointer; touch-action: none; }
+    .tir-controls { display: flex; gap: 8px; padding: 10px 16px; background: rgba(0,0,0,0.8); align-items: center; flex-wrap: wrap; }
+    .angle-box { display: flex; align-items: center; gap: 6px; flex: 1; }
+    .angle-label { font-size: 11px; color: #9b96b8; white-space: nowrap; }
+    .angle-slider { flex: 1; }
+    .btn-lancer { padding: 10px 20px; border-radius: 50px; border: none; background: #f39c12; color: #0f0e17; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 14px; cursor: pointer; }
+    .btn-lancer:disabled { opacity: 0.4; cursor: default; background: #2e2b45; color: white; }
+    .streak-bar { background: rgba(0,0,0,0.8); padding: 6px 16px; display: flex; gap: 4px; justify-content: center; }
+    .streak-dot { width: 16px; height: 16px; border-radius: 50%; background: #2e2b45; transition: all 0.3s; }
+    .streak-dot.reussi { background: #f39c12; }
+    .streak-dot.rate { background: #e74c3c; }
+    .gagnant-msg { font-size: 20px; font-weight: 900; color: #ffd93d; padding: 16px; background: rgba(0,0,0,0.9); }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin: 10px; }
+    .pos-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 8px 16px; background: rgba(0,0,0,0.8); }
+    .pos-btn { padding: 8px 4px; border-radius: 8px; border: 1px solid #2e2b45; background: #1a1828; color: #9b96b8; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .pos-btn:hover { border-color: #f39c12; color: #f39c12; }
+    .pos-btn.actif { border-color: #f39c12; background: rgba(243,156,18,0.2); color: #f39c12; }
+    .pos-btn:disabled { opacity: 0.3; cursor: default; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">🏀</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">🏀 Basket</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Marque le plus de points en 60 secondes ! 3 tirs par position !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="score-bar">
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j1">J1</div>
+          <div class="joueur-pts" id="pts-j1">0</div>
+        </div>
+        <div class="timer-display">
+          <div class="timer-num" id="timer">60</div>
+          <div class="timer-label">secondes</div>
+        </div>
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j2">J2</div>
+          <div class="joueur-pts" id="pts-j2">0</div>
+        </div>
+      </div>
+
+      <div class="streak-bar" id="streak-bar">
+        <div class="streak-dot" id="s0"></div>
+        <div class="streak-dot" id="s1"></div>
+        <div class="streak-dot" id="s2"></div>
+        <div class="streak-dot" id="s3"></div>
+        <div class="streak-dot" id="s4"></div>
+      </div>
+
+      <div class="status-bar" id="status">Prépare-toi...</div>
+      <canvas id="basket-canvas" width="440" height="380"></canvas>
+
+      <div class="pos-selector" id="pos-selector">
+        <div class="pos-btn actif" onclick="choisirPos(0,this)" id="pos-0">🏀<br/>Gauche<br/>3pts</div>
+        <div class="pos-btn" onclick="choisirPos(1,this)" id="pos-1">🏀<br/>45°G<br/>2pts</div>
+        <div class="pos-btn" onclick="choisirPos(2,this)" id="pos-2">🏀<br/>Face<br/>2pts</div>
+        <div class="pos-btn" onclick="choisirPos(3,this)" id="pos-3">🏀<br/>45°D<br/>2pts</div>
+        <div class="pos-btn" onclick="choisirPos(4,this)" id="pos-4">🏀<br/>Droite<br/>3pts</div>
+      </div>
+
+      <div class="tir-controls">
+        <div class="angle-box">
+          <span class="angle-label">📐 Angle:</span>
+          <input type="range" class="angle-slider" id="angle" min="20" max="80" value="50"/>
+          <span style="font-size:12px;font-weight:700;min-width:30px;" id="angle-val">50°</span>
+        </div>
+        <button class="btn-lancer" id="btn-lancer" onclick="lancerBalle()">🏀 Lancer !</button>
+      </div>
+
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    const canvas = document.getElementById('basket-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 440, H = 380;
+
+    // Positions de tir
+    const POSITIONS = [
+      { x: 60,  y: 280, pts: 3, nom: 'Gauche 3pts' },
+      { x: 140, y: 240, pts: 2, nom: '45° Gauche' },
+      { x: 220, y: 220, pts: 2, nom: 'Face' },
+      { x: 300, y: 240, pts: 2, nom: '45° Droite' },
+      { x: 380, y: 280, pts: 3, nom: 'Droite 3pts' }
+    ];
+
+    const PANIER_X = 220, PANIER_Y = 80, PANIER_R = 22;
+
+    let codePartie='', monPseudo='', estJ1=false;
+    let ptsJ1=0, ptsJ2=0, timerJeu=60, timerInterval=null;
+    let posActuelle=0, streak=[], maxStreak=5;
+    let animEnCours=false, partieTerminee=false;
+    let balle={x:0, y:0, vx:0, vy:0, active:false};
+    let historiqueTirs=[];
+
+    document.getElementById('angle').addEventListener('input', function() {
+      document.getElementById('angle-val').textContent = this.value + '°';
+      if (!animEnCours) dessiner();
+    });
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'basket' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo || !code) { alert('Entre pseudo et code !'); return; }
+      estJ1 = false; codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      demarrerJeu();
+    });
+
+    function demarrerJeu() {
+      ptsJ1=0; ptsJ2=0; timerJeu=60; streak=[];
+      posActuelle=0; animEnCours=false; partieTerminee=false;
+      historiqueTirs=[];
+      balle = { x: POSITIONS[0].x, y: POSITIONS[0].y, vx:0, vy:0, active:false };
+      document.getElementById('pts-j1').textContent = '0';
+      document.getElementById('pts-j2').textContent = '0';
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      document.getElementById('btn-lancer').disabled = false;
+      mettreAJourStreak();
+      activerPositions(true);
+      document.getElementById('status').textContent = '🏀 Lance la balle !';
+      dessiner();
+      startTimer();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timerJeu--;
+        document.getElementById('timer').textContent = timerJeu;
+        if (timerJeu <= 10) document.getElementById('timer').style.color = '#e74c3c';
+        if (timerJeu <= 0) {
+          clearInterval(timerInterval);
+          finPartie();
+        }
+      }, 1000);
+    }
+
+    function choisirPos(idx, el) {
+      if (animEnCours || partieTerminee) return;
+      posActuelle = idx;
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('actif'));
+      el.classList.add('actif');
+      balle.x = POSITIONS[idx].x;
+      balle.y = POSITIONS[idx].y;
+      balle.active = false;
+      dessiner();
+    }
+
+    function activerPositions(actif) {
+      document.querySelectorAll('.pos-btn').forEach(b => b.disabled = !actif);
+      document.getElementById('btn-lancer').disabled = !actif;
+    }
+
+    function lancerBalle() {
+      if (animEnCours || partieTerminee) return;
+      const angle = parseInt(document.getElementById('angle').value);
+      const pos = POSITIONS[posActuelle];
+
+      // Calcul trajectoire vers le panier
+      const dx = PANIER_X - pos.x;
+      const dy = PANIER_Y - pos.y;
+      const angleRad = angle * Math.PI / 180;
+
+      // Vitesse initiale
+      const vitesse = 12 + Math.random() * 2;
+      const dirX = dx > 0 ? 1 : -1;
+      balle.vx = Math.cos(angleRad) * vitesse * (dx > 0 ? 1 : -1);
+      balle.vy = -Math.sin(angleRad) * vitesse;
+      balle.x = pos.x;
+      balle.y = pos.y;
+      balle.active = true;
+
+      activerPositions(false);
+      animEnCours = true;
+
+      // Déterminer si c'est un panier (basé sur l'angle optimal)
+      const angleOptimal = 50;
+      const diff = Math.abs(angle - angleOptimal);
+      const chance = Math.max(0.2, 1 - diff * 0.03);
+      const panier = Math.random() < chance;
+
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'tir', panier, pts: POSITIONS[posActuelle].pts, estJ1, angle, pos: posActuelle },
+        pseudo: monPseudo
+      });
+
+      animerBalle(panier, POSITIONS[posActuelle].pts);
+    }
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'tir') {
+        if (coup.estJ1) {
+          if (coup.panier) {
+            ptsJ1 += coup.pts;
+            document.getElementById('pts-j1').textContent = ptsJ1;
+          }
+        } else {
+          if (coup.panier) {
+            ptsJ2 += coup.pts;
+            document.getElementById('pts-j2').textContent = ptsJ2;
+          }
+        }
+        const nomTireur = coup.estJ1 ? document.getElementById('nom-j1').textContent : document.getElementById('nom-j2').textContent;
+        if (coup.panier) {
+          afficherMessage('🏀 ' + nomTireur + ' marque +' + coup.pts + ' pts !', '#f39c12');
+        }
+      }
+    });
+
+    function animerBalle(panier, pts) {
+      const gravity = 0.4;
+      let frames = 0;
+      const maxFrames = 60;
+
+      function step() {
+        balle.vy += gravity;
+        balle.x += balle.vx * 0.5;
+        balle.y += balle.vy * 0.5;
+        frames++;
+
+        // Vérifier si la balle passe dans le panier
+        const distPanier = Math.hypot(balle.x - PANIER_X, balle.y - PANIER_Y);
+        if (distPanier < PANIER_R && balle.vy > 0 && frames > 10) {
+          if (panier) {
+            balle.x = PANIER_X; balle.y = PANIER_Y;
+            dessiner();
+            setTimeout(() => {
+              if (estJ1) { ptsJ1 += pts; document.getElementById('pts-j1').textContent = ptsJ1; }
+              else { ptsJ2 += pts; document.getElementById('pts-j2').textContent = ptsJ2; }
+              streak.push('reussi');
+              mettreAJourStreak();
+              afficherMessage('🎯 PANIER ! +' + pts + ' pts !', '#f39c12');
+              finAnimation();
+            }, 200);
+            return;
+          }
+        }
+
+        // Rebond sur le bord du panier
+        if (distPanier < PANIER_R + 5 && distPanier > PANIER_R - 5) {
+          balle.vx *= -0.5;
+          balle.vy *= -0.5;
+        }
+
+        // Sortie du terrain
+        if (balle.y > H + 50 || frames > maxFrames) {
+          if (!panier) {
+            streak.push('rate');
+            mettreAJourStreak();
+            afficherMessage('😔 Raté !', '#e74c3c');
+          }
+          finAnimation();
+          return;
+        }
+
+        dessiner();
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function finAnimation() {
+      animEnCours = false;
+      balle.active = false;
+      balle.x = POSITIONS[posActuelle].x;
+      balle.y = POSITIONS[posActuelle].y;
+      if (!partieTerminee) {
+        activerPositions(true);
+        dessiner();
+      }
+    }
+
+    function mettreAJourStreak() {
+      const derniers = streak.slice(-maxStreak);
+      for (let i = 0; i < maxStreak; i++) {
+        const dot = document.getElementById('s' + i);
+        dot.classList.remove('reussi', 'rate');
+        if (derniers[i]) dot.classList.add(derniers[i]);
+      }
+    }
+
+    function afficherMessage(msg, couleur) {
+      const status = document.getElementById('status');
+      status.textContent = msg;
+      status.style.color = couleur;
+      setTimeout(() => { status.style.color = 'white'; }, 1500);
+    }
+
+    function dessiner() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Fond parquet
+      ctx.fillStyle = '#c68642';
+      ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < H; i += 30) {
+        ctx.fillStyle = i % 60 === 0 ? '#c68642' : '#b5763a';
+        ctx.fillRect(0, i, W, 30);
+      }
+
+      // Lignes terrain
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 2;
+
+      // Arc des 3 points
+      ctx.beginPath();
+      ctx.arc(PANIER_X, H+20, 200, Math.PI, 0);
+      ctx.stroke();
+
+      // Raquette
+      ctx.strokeRect(PANIER_X-60, PANIER_Y-10, 120, 120);
+
+      // Ligne de lancers francs
+      ctx.beginPath();
+      ctx.moveTo(PANIER_X-60, PANIER_Y+110);
+      ctx.lineTo(PANIER_X+60, PANIER_Y+110);
+      ctx.stroke();
+
+      // Panneau
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillRect(PANIER_X-35, PANIER_Y-35, 70, 45);
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(PANIER_X-20, PANIER_Y-20, 40, 25);
+
+      // Poteau
+      ctx.fillStyle = '#888';
+      ctx.fillRect(PANIER_X-3, PANIER_Y-40, 6, 40);
+
+      // Panier (anneau)
+      ctx.beginPath();
+      ctx.arc(PANIER_X, PANIER_Y, PANIER_R, 0, Math.PI*2);
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Filet
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 1;
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(PANIER_X + i*6, PANIER_Y + PANIER_R);
+        ctx.lineTo(PANIER_X + i*4, PANIER_Y + PANIER_R + 20);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(PANIER_X-18, PANIER_Y+PANIER_R+10);
+      ctx.lineTo(PANIER_X+18, PANIER_Y+PANIER_R+10);
+      ctx.stroke();
+
+      // Positions de tir
+      POSITIONS.forEach((pos, i) => {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 12, 0, Math.PI*2);
+        ctx.fillStyle = i === posActuelle ? 'rgba(243,156,18,0.4)' : 'rgba(255,255,255,0.2)';
+        ctx.fill();
+        ctx.strokeStyle = i === posActuelle ? '#f39c12' : 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 10px Nunito';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pos.pts + 'p', pos.x, pos.y);
+      });
+
+      // Ligne de visée
+      if (!animEnCours && !partieTerminee) {
+        const angle = parseInt(document.getElementById('angle').value) * Math.PI / 180;
+        const pos = POSITIONS[posActuelle];
+        const dx = PANIER_X - pos.x;
+        const dir = dx > 0 ? 1 : -1;
+        ctx.strokeStyle = 'rgba(243,156,18,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4,4]);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        // Simuler arc de trajectoire
+        let tx = pos.x, ty = pos.y;
+        let tvx = Math.cos(angle) * 8 * dir;
+        let tvy = -Math.sin(angle) * 8;
+        for (let i = 0; i < 20; i++) {
+          tvy += 0.4;
+          tx += tvx * 0.5; ty += tvy * 0.5;
+          ctx.lineTo(tx, ty);
+          if (ty > H) break;
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Balle
+      if (balle.active || (!animEnCours && !partieTerminee)) {
+        const bx = animEnCours ? balle.x : POSITIONS[posActuelle].x;
+        const by = animEnCours ? balle.y : POSITIONS[posActuelle].y;
+        // Ombre
+        ctx.beginPath();
+        ctx.ellipse(bx+2, by+4, 10, 5, 0, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+        // Balle
+        ctx.beginPath();
+        ctx.arc(bx, by, 12, 0, Math.PI*2);
+        const grad = ctx.createRadialGradient(bx-3, by-3, 2, bx, by, 12);
+        grad.addColorStop(0, '#f39c12');
+        grad.addColorStop(1, '#e67e22');
+        ctx.fillStyle = grad;
+        ctx.fill();
+        // Lignes basket
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(bx, by, 12, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(bx-12, by);
+        ctx.lineTo(bx+12, by);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(bx, by, 12, -0.5, 0.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(bx, by, 12, Math.PI-0.5, Math.PI+0.5);
+        ctx.stroke();
+      }
+    }
+
+    function finPartie() {
+      partieTerminee = true;
+      clearInterval(timerInterval);
+      activerPositions(false);
+      const nomJ1 = document.getElementById('nom-j1').textContent;
+      const nomJ2 = document.getElementById('nom-j2').textContent;
+      let msg = '';
+      if (ptsJ1 > ptsJ2) msg = '🏆 ' + nomJ1 + ' gagne ! (' + ptsJ1 + '-' + ptsJ2 + ')';
+      else if (ptsJ2 > ptsJ1) msg = '🏆 ' + nomJ2 + ' gagne ! (' + ptsJ2 + '-' + ptsJ1 + ')';
+      else msg = '🤝 Égalité ! (' + ptsJ1 + '-' + ptsJ2 + ')';
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = msg;
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+      document.getElementById('status').textContent = '🎉 Partie terminée !';
+      document.getElementById('timer').style.color = 'white';
+    }
+
+    function rejouer() {
+      document.getElementById('timer').style.color = 'white';
+      demarrerJeu();
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
