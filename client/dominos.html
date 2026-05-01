@@ -1,1 +1,443 @@
-<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'/><title>Dominos - MultiJeuxGo</title><link rel='stylesheet' href='style.css'/></head><body><header><div class='logo'><a href='index.html' style='color:white;text-decoration:none;'>Multi<span style='color:#a67cff'>Jeux</span>Go</a></div></header><section style='text-align:center;padding:40px 20px;'><div style='font-size:60px;'>&#127150;</div><h2>Dominos</h2><p style='color:#9b96b8;'>2 a 4 joueurs - Le classique !</p><p style='color:#a67cff;font-weight:700;'>Bientot disponible !</p><a href='index.html' style='display:inline-block;margin-top:20px;padding:12px 28px;border-radius:50px;background:#7c5cbf;color:white;text-decoration:none;font-weight:700;'>Retour</a></section></body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dominos - MultiJeuxGo</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; margin: 0; }
+    .jeu-container { max-width: 480px; margin: 0 auto; text-align: center; }
+    .lobby-box { background: #1a1828; border-radius: 16px; padding: 24px; margin: 16px; border: 1px solid #2e2b45; }
+    .lobby-box input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #7c5cbf; background: #0f0e17; color: white; font-family: 'Nunito', sans-serif; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    .lobby-box button { width: 100%; padding: 12px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin-bottom: 8px; }
+    .code-display { background: #0f0e17; border-radius: 10px; padding: 14px; margin: 10px 0; font-size: 28px; font-weight: 900; color: #a67cff; letter-spacing: 4px; }
+    .score-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.85); padding: 10px 16px; }
+    .joueur-score { text-align: center; }
+    .joueur-nom { font-size: 12px; color: #9b96b8; }
+    .joueur-pts { font-size: 28px; font-weight: 900; color: #a67cff; }
+    .joueur-nb { font-size: 11px; color: #9b96b8; }
+    .status-bar { background: rgba(0,0,0,0.8); padding: 10px; font-weight: 700; font-size: 13px; text-align: center; }
+    .plateau { background: #1a3a1a; min-height: 160px; margin: 0; padding: 12px; overflow-x: auto; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: center; border-top: 1px solid #2e2b45; border-bottom: 1px solid #2e2b45; }
+    .domino-plateau { display: inline-flex; flex-direction: column; align-items: center; border: 2px solid #444; border-radius: 4px; background: #f5f0e0; color: #1a1828; font-size: 11px; font-weight: 900; padding: 2px; min-width: 24px; }
+    .domino-plateau.horizontal { flex-direction: row; }
+    .dom-face { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .dom-sep { width: 1px; height: 20px; background: #888; }
+    .dom-sep-h { height: 1px; width: 20px; background: #888; }
+    .ma-main { padding: 10px 16px; background: rgba(0,0,0,0.8); overflow-x: auto; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; min-height: 70px; align-items: center; }
+    .domino-main { display: flex; flex-direction: column; align-items: center; border: 2px solid #7c5cbf; border-radius: 6px; background: #f5f0e0; color: #1a1828; padding: 3px; cursor: pointer; transition: all 0.2s; min-width: 28px; }
+    .domino-main:hover { transform: translateY(-4px); border-color: #a67cff; box-shadow: 0 4px 12px rgba(124,92,191,0.4); }
+    .domino-main.selectionne { border-color: #ffd93d; background: #fffde0; transform: translateY(-6px); }
+    .domino-main.non-jouable { opacity: 0.4; cursor: default; }
+    .domino-main:hover.non-jouable { transform: none; }
+    .dom-face-main { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; }
+    .dom-sep-main { height: 1px; width: 22px; background: #888; margin: 1px 0; }
+    .actions-bar { display: flex; gap: 8px; padding: 8px 16px; background: rgba(0,0,0,0.8); }
+    .btn-jouer { flex: 2; padding: 10px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; }
+    .btn-jouer:disabled { opacity: 0.4; cursor: default; }
+    .btn-piocher { flex: 1; padding: 10px; border-radius: 50px; border: 1.5px solid #2e2b45; background: transparent; color: #9b96b8; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .btn-piocher:disabled { opacity: 0.4; cursor: default; }
+    .pioche-info { text-align: center; font-size: 12px; color: #9b96b8; padding: 4px; background: rgba(0,0,0,0.8); }
+    .dots { display: grid; width: 100%; height: 100%; }
+    .gagnant-msg { font-size: 20px; font-weight: 900; color: #ffd93d; padding: 16px; background: rgba(0,0,0,0.9); }
+    .btn-rejouer { padding: 12px 28px; border-radius: 50px; border: none; background: #7c5cbf; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; margin: 10px; }
+    .adv-main { padding: 8px 16px; background: rgba(0,0,0,0.6); display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; min-height: 40px; align-items: center; }
+    .domino-dos { width: 24px; height: 36px; border: 2px solid #444; border-radius: 4px; background: linear-gradient(135deg, #2e2b45, #1a1828); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><a href="index.html" style="color:white;text-decoration:none;">Multi<span style="color:#a67cff">Jeux</span>Go</a></div>
+    <span style="font-size:24px;">🁣</span>
+  </header>
+
+  <div class="jeu-container">
+
+    <div id="lobby">
+      <div class="lobby-box">
+        <h2 style="color:#a67cff;margin-bottom:16px;">🁣 Dominos</h2>
+        <p style="color:#9b96b8;font-size:13px;margin-bottom:16px;">Pose toutes tes pièces avant ton adversaire !</p>
+        <input id="pseudo" type="text" placeholder="Ton pseudo"/>
+        <button onclick="creerPartie()">🚀 Créer une partie</button>
+        <div style="color:#9b96b8;font-size:13px;margin:8px 0;">— ou —</div>
+        <input id="code-input" type="text" placeholder="Code de la salle" style="letter-spacing:3px;text-transform:uppercase;text-align:center;"/>
+        <button onclick="rejoindrePartie()" style="background:#2e2b45;">🔗 Rejoindre</button>
+      </div>
+    </div>
+
+    <div id="attente" style="display:none;">
+      <div class="lobby-box">
+        <h3 style="color:#a67cff;margin-bottom:12px;">✅ Salle créée !</h3>
+        <div class="code-display" id="code-affiche">----</div>
+        <p style="color:#9b96b8;font-size:13px;">⏳ En attente d'un joueur...</p>
+      </div>
+    </div>
+
+    <div id="jeu" style="display:none;">
+      <div class="score-bar">
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j1">J1</div>
+          <div class="joueur-pts" id="pts-j1">0</div>
+          <div class="joueur-nb" id="nb-j1">7 pièces</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:20px;">🁣</div>
+          <div style="font-size:10px;color:#9b96b8;">Dominos</div>
+        </div>
+        <div class="joueur-score">
+          <div class="joueur-nom" id="nom-j2">J2</div>
+          <div class="joueur-pts" id="pts-j2">0</div>
+          <div class="joueur-nb" id="nb-j2">7 pièces</div>
+        </div>
+      </div>
+
+      <div class="status-bar" id="status">En attente...</div>
+
+      <!-- Main adversaire (dos) -->
+      <div class="adv-main" id="adv-main"></div>
+
+      <!-- Plateau de jeu -->
+      <div class="plateau" id="plateau">
+        <div style="color:#9b96b8;font-size:13px;">Le plateau est vide...</div>
+      </div>
+
+      <div class="pioche-info" id="pioche-info">Pioche: 14 pièces</div>
+
+      <!-- Ma main -->
+      <div class="ma-main" id="ma-main"></div>
+
+      <div class="actions-bar">
+        <button class="btn-piocher" id="btn-piocher" onclick="piocher()">📦 Piocher</button>
+        <button class="btn-jouer" id="btn-jouer" onclick="jouerDomino()" disabled>🁣 Jouer</button>
+      </div>
+
+      <div class="gagnant-msg" id="gagnant-msg" style="display:none;"></div>
+      <button class="btn-rejouer" id="btn-rejouer" onclick="rejouer()" style="display:none;">🔄 Rejouer</button>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://multijeuxgo.onrender.com');
+    const POINTS = ['⚫','①','②','③','④','⑤','⑥'];
+
+    let codePartie='', monPseudo='', estJ1=false;
+    let monTour=false, partieTerminee=false;
+    let maMain=[], plateau=[], pioche=[];
+    let dominoSelectionne=null;
+    let boutGauche=null, boutDroit=null;
+    let nbAdvMain=7, ptsJ1=0, ptsJ2=0;
+
+    // Générer tous les dominos [0-6][0-6]
+    function genererDominos() {
+      const dominos = [];
+      for (let i = 0; i <= 6; i++) {
+        for (let j = i; j <= 6; j++) {
+          dominos.push([i, j]);
+        }
+      }
+      return melanger(dominos);
+    }
+
+    function melanger(arr) {
+      for (let i = arr.length-1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i+1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function creerPartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      if (!monPseudo) { alert('Entre ton pseudo !'); return; }
+      estJ1 = true;
+      socket.emit('creer_salle', { pseudo: monPseudo, jeu: 'dominos' });
+    }
+
+    function rejoindrePartie() {
+      monPseudo = document.getElementById('pseudo').value.trim();
+      const code = document.getElementById('code-input').value.trim().toUpperCase();
+      if (!monPseudo || !code) { alert('Entre pseudo et code !'); return; }
+      estJ1 = false; codePartie = code;
+      socket.emit('rejoindre_salle', { pseudo: monPseudo, code: code });
+    }
+
+    socket.on('salle_creee', (data) => {
+      codePartie = data.code;
+      document.getElementById('code-affiche').textContent = data.code;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'block';
+    });
+
+    socket.on('joueur_rejoint', (data) => {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('attente').style.display = 'none';
+      document.getElementById('jeu').style.display = 'block';
+      document.getElementById('nom-j1').textContent = data.joueurs[0];
+      document.getElementById('nom-j2').textContent = data.joueurs[1];
+      if (estJ1) {
+        // J1 distribue les pièces
+        const tousLesDominos = genererDominos();
+        maMain = tousLesDominos.slice(0, 7);
+        const mainJ2 = tousLesDominos.slice(7, 14);
+        pioche = tousLesDominos.slice(14);
+        nbAdvMain = 7;
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'distribution', mainJ2, pioche },
+          pseudo: monPseudo
+        });
+        monTour = true;
+      }
+      ptsJ1=0; ptsJ2=0; plateau=[]; boutGauche=null; boutDroit=null;
+      partieTerminee=false;
+      afficherJeu();
+    });
+
+    socket.on('coup_recu', (data) => {
+      const coup = data.coup;
+      if (coup.type === 'distribution') {
+        maMain = coup.mainJ2;
+        pioche = coup.pioche;
+        nbAdvMain = 7;
+        monTour = false;
+        afficherJeu();
+        document.getElementById('status').textContent = '⏳ ' + document.getElementById('nom-j1').textContent + ' commence...';
+      } else if (coup.type === 'pose') {
+        plateau = coup.plateau;
+        boutGauche = coup.boutGauche;
+        boutDroit = coup.boutDroit;
+        nbAdvMain = coup.nbAdvMain;
+        document.getElementById('nb-' + (estJ1 ? 'j2' : 'j1')).textContent = nbAdvMain + ' pièces';
+        monTour = true;
+        afficherPlateau();
+        afficherAdvMain();
+        document.getElementById('status').textContent = '🁣 Ton tour ! Choisis une pièce';
+        mettreAJourBoutons();
+        if (coup.nbAdvMain === 0) {
+          finPartie(false);
+        }
+      } else if (coup.type === 'pioche_adv') {
+        nbAdvMain++;
+        document.getElementById('nb-' + (estJ1 ? 'j2' : 'j1')).textContent = nbAdvMain + ' pièces';
+        afficherAdvMain();
+      } else if (coup.type === 'passe') {
+        monTour = true;
+        document.getElementById('status').textContent = '🁣 Ton tour ! (L\'adversaire a passé)';
+        mettreAJourBoutons();
+      }
+    });
+
+    function afficherJeu() {
+      afficherMaMain();
+      afficherPlateau();
+      afficherAdvMain();
+      mettreAJourBoutons();
+      document.getElementById('pioche-info').textContent = 'Pioche: ' + pioche.length + ' pièces';
+      document.getElementById('nb-' + (estJ1 ? 'j1' : 'j2')).textContent = maMain.length + ' pièces';
+      document.getElementById('nb-' + (estJ1 ? 'j2' : 'j1')).textContent = nbAdvMain + ' pièces';
+    }
+
+    function afficherMaMain() {
+      const container = document.getElementById('ma-main');
+      container.innerHTML = '';
+      maMain.forEach((dom, i) => {
+        const jouable = estJouable(dom);
+        const div = document.createElement('div');
+        div.classList.add('domino-main');
+        if (!jouable || !monTour) div.classList.add('non-jouable');
+        if (dominoSelectionne === i) div.classList.add('selectionne');
+        div.innerHTML = `
+          <div class="dom-face-main">${dom[0]}</div>
+          <div class="dom-sep-main"></div>
+          <div class="dom-face-main">${dom[1]}</div>
+        `;
+        if (jouable && monTour) {
+          div.onclick = () => {
+            dominoSelectionne = i;
+            afficherMaMain();
+            document.getElementById('btn-jouer').disabled = false;
+          };
+        }
+        container.appendChild(div);
+      });
+    }
+
+    function afficherAdvMain() {
+      const container = document.getElementById('adv-main');
+      container.innerHTML = '';
+      for (let i = 0; i < nbAdvMain; i++) {
+        const div = document.createElement('div');
+        div.classList.add('domino-dos');
+        container.appendChild(div);
+      }
+    }
+
+    function afficherPlateau() {
+      const container = document.getElementById('plateau');
+      if (plateau.length === 0) {
+        container.innerHTML = '<div style="color:#9b96b8;font-size:13px;">Le plateau est vide...</div>';
+        return;
+      }
+      container.innerHTML = '';
+      plateau.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('domino-plateau');
+        div.innerHTML = `
+          <div class="dom-face">${item.dom[0]}</div>
+          <div class="dom-sep-h"></div>
+          <div class="dom-face">${item.dom[1]}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function estJouable(dom) {
+      if (plateau.length === 0) return true;
+      return dom[0] === boutGauche || dom[1] === boutGauche ||
+             dom[0] === boutDroit || dom[1] === boutDroit;
+    }
+
+    function peutJouer() {
+      return maMain.some(d => estJouable(d));
+    }
+
+    function mettreAJourBoutons() {
+      const peutJ = peutJouer() && monTour;
+      document.getElementById('btn-jouer').disabled = !peutJ || dominoSelectionne === null;
+      document.getElementById('btn-piocher').disabled = !monTour || peutJ || pioche.length === 0;
+      document.getElementById('pioche-info').textContent = 'Pioche: ' + pioche.length + ' pièces';
+    }
+
+    function jouerDomino() {
+      if (dominoSelectionne === null || !monTour) return;
+      const dom = maMain[dominoSelectionne];
+
+      let domFinal = [...dom];
+      let cote = null;
+
+      if (plateau.length === 0) {
+        boutGauche = dom[0];
+        boutDroit = dom[1];
+        plateau.push({ dom: domFinal, cote: 'milieu' });
+        cote = 'milieu';
+      } else {
+        // Déterminer de quel côté poser
+        if (dom[0] === boutDroit) {
+          boutDroit = dom[1];
+          plateau.push({ dom: domFinal, cote: 'droite' });
+          cote = 'droite';
+        } else if (dom[1] === boutDroit) {
+          domFinal = [dom[1], dom[0]];
+          boutDroit = dom[0];
+          plateau.push({ dom: domFinal, cote: 'droite' });
+          cote = 'droite';
+        } else if (dom[1] === boutGauche) {
+          boutGauche = dom[0];
+          plateau.unshift({ dom: domFinal, cote: 'gauche' });
+          cote = 'gauche';
+        } else if (dom[0] === boutGauche) {
+          domFinal = [dom[1], dom[0]];
+          boutGauche = dom[1];
+          plateau.unshift({ dom: domFinal, cote: 'gauche' });
+          cote = 'gauche';
+        }
+      }
+
+      maMain.splice(dominoSelectionne, 1);
+      dominoSelectionne = null;
+      monTour = false;
+
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'pose', plateau, boutGauche, boutDroit, nbAdvMain: maMain.length },
+        pseudo: monPseudo
+      });
+
+      document.getElementById('nb-' + (estJ1 ? 'j1' : 'j2')).textContent = maMain.length + ' pièces';
+      afficherJeu();
+      document.getElementById('status').textContent = '⏳ Tour de l\'adversaire...';
+
+      if (maMain.length === 0) {
+        finPartie(true);
+      }
+    }
+
+    function piocher() {
+      if (!monTour || pioche.length === 0) return;
+      const nouvellePiece = pioche.pop();
+      maMain.push(nouvellePiece);
+      document.getElementById('nb-' + (estJ1 ? 'j1' : 'j2')).textContent = maMain.length + ' pièces';
+
+      socket.emit('jouer_coup', {
+        code: codePartie,
+        coup: { type: 'pioche_adv' },
+        pseudo: monPseudo
+      });
+
+      // Vérifier si la pièce est jouable
+      if (estJouable(nouvellePiece)) {
+        document.getElementById('status').textContent = '🎉 Pièce piochée ! Tu peux la jouer !';
+      } else if (pioche.length === 0) {
+        // Plus de pièces → passer
+        monTour = false;
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'passe' },
+          pseudo: monPseudo
+        });
+        document.getElementById('status').textContent = '⏳ Pioche vide, tour passé...';
+      }
+
+      afficherJeu();
+    }
+
+    function finPartie(jaiGagne) {
+      partieTerminee = true;
+      monTour = false;
+      document.getElementById('btn-jouer').disabled = true;
+      document.getElementById('btn-piocher').disabled = true;
+
+      // Calculer les points (somme des pièces restantes adversaire)
+      const nomJ1 = document.getElementById('nom-j1').textContent;
+      const nomJ2 = document.getElementById('nom-j2').textContent;
+      let msg = '';
+      if (jaiGagne) {
+        // Compter les points de l'adversaire
+        msg = '🏆 ' + (estJ1 ? nomJ1 : nomJ2) + ' a gagné ! Plus de pièces !';
+      } else {
+        msg = '🏆 ' + (estJ1 ? nomJ2 : nomJ1) + ' a gagné ! Plus de pièces !';
+      }
+      document.getElementById('gagnant-msg').style.display = 'block';
+      document.getElementById('gagnant-msg').textContent = msg;
+      document.getElementById('btn-rejouer').style.display = 'inline-block';
+      document.getElementById('status').textContent = '🎉 Partie terminée !';
+    }
+
+    function rejouer() {
+      document.getElementById('gagnant-msg').style.display = 'none';
+      document.getElementById('btn-rejouer').style.display = 'none';
+      plateau=[]; boutGauche=null; boutDroit=null;
+      maMain=[]; dominoSelectionne=null;
+      partieTerminee=false; monTour=false;
+      if (estJ1) {
+        const tousLesDominos = genererDominos();
+        maMain = tousLesDominos.slice(0, 7);
+        const mainJ2 = tousLesDominos.slice(7, 14);
+        pioche = tousLesDominos.slice(14);
+        nbAdvMain = 7;
+        socket.emit('jouer_coup', {
+          code: codePartie,
+          coup: { type: 'distribution', mainJ2, pioche },
+          pseudo: monPseudo
+        });
+        monTour = true;
+      }
+      afficherJeu();
+    }
+
+    socket.on('erreur', (data) => { alert(data.message); });
+  </script>
+</body>
+</html>
