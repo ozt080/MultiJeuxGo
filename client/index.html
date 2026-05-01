@@ -19,8 +19,8 @@
   </header>
 
   <section class="hero">
-    <h1>Joue avec tes amis partout ! 🎮</h1>
-    <p>Des dizaines de jeux multijoueur gratuits !</p>
+    <h1 data-lang="titre">Joue avec tes amis partout !</h1>
+  <p data-lang="sousTitre">Des dizaines de jeux multijoueur gratuits !</p>
     <div class="hero-btns">
       <a href="chat.html" class="btn-primary">💬 Chat</a>
       <a href="profil.html" class="btn-primary" style="background:#2e2b45;">👤 Profil</a>
@@ -84,25 +84,25 @@
   <!-- NAVIGATION EN BAS -->
   <nav class="bottom-nav">
     <a href="index.html" class="nav-item active">
-      <span class="nav-icon">🎮</span>
-      <span>Jeux</span>
-    </a>
-    <a href="classement.html" class="nav-item">
-      <span class="nav-icon">🏆</span>
-      <span>Classement</span>
-    </a>
-    <a href="tournoi.html" class="nav-item">
-      <span class="nav-icon">🎯</span>
-      <span>Tournois</span>
-    </a>
-    <a href="chat.html" class="nav-item">
-      <span class="nav-icon">💬</span>
-      <span>Chat</span>
-    </a>
-    <a href="profil.html" class="nav-item">
-      <span class="nav-icon">👤</span>
-      <span>Profil</span>
-    </a>
+  <span class="nav-icon">🎮</span>
+  <span data-lang="jeux">Jeux</span>
+</a>
+<a href="classement.html" class="nav-item">
+  <span class="nav-icon">🏆</span>
+  <span data-lang="classement">Classement</span>
+</a>
+<a href="tournoi.html" class="nav-item">
+  <span class="nav-icon">🎯</span>
+  <span data-lang="tournois">Tournois</span>
+</a>
+<a href="chat.html" class="nav-item">
+  <span class="nav-icon">💬</span>
+  <span data-lang="chat">Chat</span>
+</a>
+<a href="profil.html" class="nav-item">
+  <span class="nav-icon">👤</span>
+  <span data-lang="profil">Profil</span>
+</a>
   </nav>
 
   <script type="module">
@@ -124,6 +124,8 @@
       navigator.serviceWorker.register('/sw.js');
     }
   </script>
+
+  <script src="lang.js"></script>
 
 </body>
 </html>
