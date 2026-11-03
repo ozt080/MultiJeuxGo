@@ -1,0 +1,1 @@
+<?php echo "Serveur MultiJeuxGo en ligne !"; ?>
