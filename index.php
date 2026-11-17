@@ -34,11 +34,16 @@ $classement = $pdo->query("SELECT pseudo, score FROM joueurs ORDER BY score DESC
 
     <h2>Jeux disponibles</h2>
     <?php foreach ($jeux as $jeu): ?>
-        <div class="carte">
-            <h3><?= htmlspecialchars($jeu['nom']) ?></h3>
-            <p><?= htmlspecialchars($jeu['description']) ?></p>
-        </div>
-    <?php endforeach; ?>
+    <div class="carte">
+        <h3><?= htmlspecialchars($jeu['nom']) ?></h3>
+        <p><?= htmlspecialchars($jeu['description']) ?></p>
+        <?php if (file_exists(__DIR__ . '/jeux/' . $jeu['slug'] . '.php')): ?>
+            <a href="jeux/<?= htmlspecialchars($jeu['slug']) ?>.php">Jouer</a>
+        <?php else: ?>
+            <em>Bientôt disponible</em>
+        <?php endif; ?>
+    </div>
+<?php endforeach; ?>
 
     <h2>Top 5 des joueurs</h2>
     <table>
