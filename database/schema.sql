@@ -28,3 +28,19 @@ ON DUPLICATE KEY UPDATE
     icone = VALUES(icone),
     couleur = VALUES(couleur),
     description = VALUES(description);
+
+CREATE TABLE IF NOT EXISTS salons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(8) NOT NULL UNIQUE,
+    id_jeu INT NOT NULL,
+    id_hote INT NOT NULL,
+    id_invite INT DEFAULT NULL,
+    statut ENUM('attente', 'en_cours', 'termine') NOT NULL DEFAULT 'attente',
+    etat_jeu TEXT,
+    score_hote INT NOT NULL DEFAULT 0,
+    score_invite INT NOT NULL DEFAULT 0,
+    cree_le DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_jeu) REFERENCES jeux(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_hote) REFERENCES joueurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_invite) REFERENCES joueurs(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

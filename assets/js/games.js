@@ -3,7 +3,11 @@ const ctx = canvas.getContext('2d');
 const domArea = document.getElementById('domGameArea');
 const hint = document.getElementById('controlsHint');
 const victoryBox = document.getElementById('victoryBox');
+const waitingRoom = document.getElementById('waitingRoom');
+const playersStatus = document.getElementById('playersStatus');
+const SALON = window.GAME_CONFIG.salon;
 let finished = false;
+let salonState = null;
 
 function useDomMode(text) {
     canvas.style.display = 'none';
@@ -11,9 +15,43 @@ function useDomMode(text) {
     hint.textContent = text;
 }
 
+async function syncSalon(payload) {
+    await fetch('api/salon.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'jouer', code: SALON, ...payload })
+    });
+}
+
 async function finishGame(points, message) {
     if (finished) return;
     finished = true;
+
+    if (SALON && salonState) {
+        const e = salonState.etat_jeu || {};
+        if (salonState.role === 'hote') { e.hote_fini = true; }
+        else { e.invite_fini = true; }
+        const bothDone = e.hote_fini && e.invite_fini;
+        const sh = salonState.role === 'hote' ? points : salonState.score_hote;
+        const si = salonState.role === 'invite' ? points : salonState.score_invite;
+        const ptsH = sh >= si ? 160 : 50;
+        const ptsI = si >= sh ? 160 : 50;
+
+        await syncSalon({
+            score: points,
+            etat_jeu: e,
+            termine: bothDone,
+            pts_hote: ptsH,
+            pts_invite: ptsI
+        });
+
+        victoryBox.style.display = 'block';
+        victoryBox.innerHTML = bothDone
+            ? `<h2>🏆 Duel terminé !</h2><p>👑 ${salonState.hote_pseudo} : <strong>${sh} pts</strong> vs 🎮 ${salonState.invite_pseudo} : <strong>${si} pts</strong></p><a href="index.php" class="btn btn-primary" style="margin-top:10px;">Retour au lobby</a>`
+            : `<h2>✅ ${message} (${points} pts)</h2><p>En attente que ton ami termine sa manche pour départager le duel...</p>`;
+        return;
+    }
+
     try {
         const res = await fetch('api/score.php', {
             method: 'POST',
@@ -238,7 +276,7 @@ const games = {
     },
 
     'pinball'() {
-        hint.textContent = 'Flèches Gauche/Droite (ou clic gauche/droit) pour actionner les flippers !';
+        hint.textContent = 'Flèches Gauche/Droite (ou clic) pour actionner les flippers !';
         let ball = { x: 420, y: 80, vx: 3, vy: 2 }, score = 0, leftUp = false, rightUp = false;
         const bumpers = [[280,140],[480,140],[380,210],[240,260],[520,260]];
         window.onkeydown = e => { if (e.key === 'ArrowLeft') leftUp = true; if (e.key === 'ArrowRight') rightUp = true; };
@@ -371,6 +409,46 @@ const games = {
     },
 
     'ludo'() {
+        if (SALON && salonState) {
+            useDomMode('Ludo Royal en ligne : amène ton pion à la case 24 avant ton ami !');
+            const e = salonState.etat_jeu;
+            const myTurn = e.tour === salonState.role && !e.gagnant;
+            let cells = '';
+            for (let i = 0; i <= 24; i++) {
+                let mark = i === e.pos_hote && i === e.pos_invite ? '🔵🔴' : i === e.pos_hote ? '🔵' : i === e.pos_invite ? '🔴' : i === 24 ? '🏁' : i;
+                cells += `<div style="width:42px;height:42px;border-radius:10px;background:#1b223c;display:grid;place-items:center;font-weight:700;">${mark}</div>`;
+            }
+            domArea.innerHTML = `
+                <div style="display:flex;flex-wrap:wrap;gap:6px;max-width:560px;justify-content:center;">${cells}</div>
+                <p>Dernier dé : <strong>${e.de}</strong> · 🔵 ${salonState.hote_pseudo} (${e.pos_hote}/24) · 🔴 ${salonState.invite_pseudo} (${e.pos_invite}/24)</p>
+                <p style="color:#fbbf24;font-weight:700;">${e.gagnant ? '🏆 ' + e.gagnant + ' remporte la course !' : (myTurn ? 'C\'est ton tour !' : 'Tour de ton ami...')}</p>
+                ${myTurn ? '<button id="rollLudoPvp" class="btn btn-primary">🎲 Lancer le dé</button>' : ''}
+            `;
+            if (myTurn) {
+                document.getElementById('rollLudoPvp').onclick = async () => {
+                    const d = Math.floor(Math.random() * 6) + 1;
+                    e.de = d;
+                    if (salonState.role === 'hote') {
+                        e.pos_hote = Math.min(24, e.pos_hote + d);
+                        if (e.pos_hote === e.pos_invite && e.pos_hote < 24) e.pos_invite = 0;
+                        if (e.pos_hote >= 24) e.gagnant = salonState.hote_pseudo;
+                    } else {
+                        e.pos_invite = Math.min(24, e.pos_invite + d);
+                        if (e.pos_invite === e.pos_hote && e.pos_invite < 24) e.pos_hote = 0;
+                        if (e.pos_invite >= 24) e.gagnant = salonState.invite_pseudo;
+                    }
+                    e.tour = salonState.role === 'hote' ? 'invite' : 'hote';
+                    await syncSalon({
+                        etat_jeu: e,
+                        termine: !!e.gagnant,
+                        pts_hote: e.gagnant === salonState.hote_pseudo ? 180 : 50,
+                        pts_invite: e.gagnant === salonState.invite_pseudo ? 180 : 50
+                    });
+                };
+            }
+            return;
+        }
+
         useDomMode('Lance le dé pour amener ton pion bleu à la case 24 avant le pion rouge !');
         let pPos = 0, bPos = 0, lastDice = '-';
         function render() {
@@ -398,9 +476,7 @@ const games = {
     },
 
     'puissance-4'() {
-        useDomMode('Clique sur une colonne pour déposer ton jeton rouge !');
-        const grid = Array.from({ length: 6 }, () => Array(7).fill(0));
-        function win(p) {
+        function checkWin(grid, p) {
             for (let r = 0; r < 6; r++) for (let c = 0; c < 7; c++) {
                 if (c < 4 && [0,1,2,3].every(k => grid[r][c+k] === p)) return true;
                 if (r < 3 && [0,1,2,3].every(k => grid[r+k][c] === p)) return true;
@@ -409,47 +485,151 @@ const games = {
             }
             return false;
         }
+
+        if (SALON && salonState) {
+            useDomMode('Puissance 4 en ligne : 🔴 Hôte vs 🟡 Invité');
+            const e = salonState.etat_jeu;
+            const myNum = salonState.role === 'hote' ? 1 : 2;
+            const myTurn = e.tour === salonState.role && !e.gagnant;
+            domArea.innerHTML = `
+                <p style="color:#fbbf24;font-weight:700;">${e.gagnant ? '🏆 ' + e.gagnant + ' gagne la partie !' : (myTurn ? 'À toi de jouer (' + (myNum === 1 ? '🔴' : '🟡') + ')' : 'En attente du coup de ton ami...')}</p>
+                <div class="c4-grid">${e.grid.flatMap((row, r) => row.map((v, c) =>
+                    `<div class="c4-cell" data-c="${c}" style="background:${v===1?'#ef4444':v===2?'#fbbf24':'#0b0e1a'}"></div>`)).join('')}</div>
+            `;
+            if (myTurn) {
+                domArea.querySelectorAll('.c4-cell').forEach(el => el.onclick = async () => {
+                    const col = +el.dataset.c;
+                    let placed = false;
+                    for (let r = 5; r >= 0; r--) if (!e.grid[r][col]) { e.grid[r][col] = myNum; placed = true; break; }
+                    if (!placed) return;
+                    if (checkWin(e.grid, myNum)) e.gagnant = myNum === 1 ? salonState.hote_pseudo : salonState.invite_pseudo;
+                    e.tour = salonState.role === 'hote' ? 'invite' : 'hote';
+                    await syncSalon({
+                        etat_jeu: e,
+                        termine: !!e.gagnant,
+                        pts_hote: e.gagnant === salonState.hote_pseudo ? 170 : 50,
+                        pts_invite: e.gagnant === salonState.invite_pseudo ? 170 : 50
+                    });
+                });
+            }
+            return;
+        }
+
+        useDomMode('Clique sur une colonne pour déposer ton jeton rouge !');
+        const grid = Array.from({ length: 6 }, () => Array(7).fill(0));
         function drop(col, p) { for (let r = 5; r >= 0; r--) if (!grid[r][col]) { grid[r][col] = p; return true; } return false; }
         function render() {
             domArea.innerHTML = `<div class="c4-grid">${grid.flatMap((row, r) => row.map((v, c) =>
                 `<div class="c4-cell" data-c="${c}" style="background:${v===1?'#ef4444':v===2?'#fbbf24':'#0b0e1a'}"></div>`)).join('')}</div>`;
             domArea.querySelectorAll('.c4-cell').forEach(el => el.onclick = () => {
                 if (finished || !drop(+el.dataset.c, 1)) return;
-                if (win(1)) { render(); return finishGame(160, 'Puissance 4 ! Victoire !'); }
+                if (checkWin(grid, 1)) { render(); return finishGame(160, 'Puissance 4 ! Victoire !'); }
                 const cols = [0,1,2,3,4,5,6].filter(c => !grid[0][c]);
                 if (cols.length) drop(cols[Math.floor(Math.random() * cols.length)], 2);
                 render();
-                if (win(2)) finishGame(30, 'L\'IA aligne 4 jetons !');
+                if (checkWin(grid, 2)) finishGame(30, 'L\'IA aligne 4 jetons !');
             });
         }
         render();
     },
 
     'morpion'() {
+        const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        const check = (b, s) => lines.some(l => l.every(i => b[i] === s));
+
+        if (SALON && salonState) {
+            useDomMode('Morpion en ligne : X (Hôte) vs O (Invité)');
+            const e = salonState.etat_jeu;
+            const mySym = salonState.role === 'hote' ? 'X' : 'O';
+            const myTurn = e.tour === salonState.role && !e.gagnant;
+            domArea.innerHTML = `
+                <p style="color:#fbbf24;font-weight:700;">${e.gagnant ? '🏆 ' + e.gagnant : (myTurn ? 'À toi (' + mySym + ')' : 'Tour de ton ami...')}</p>
+                <div class="ttt-grid">${e.board.map((v, i) => `<div class="ttt-cell" data-i="${i}" style="color:${v==='X'?'#38bdf8':'#f43f5e'}">${v}</div>`).join('')}</div>
+            `;
+            if (myTurn) {
+                domArea.querySelectorAll('.ttt-cell').forEach(el => el.onclick = async () => {
+                    const i = +el.dataset.i;
+                    if (e.board[i]) return;
+                    e.board[i] = mySym;
+                    let done = false;
+                    if (check(e.board, mySym)) { e.gagnant = (mySym === 'X' ? salonState.hote_pseudo : salonState.invite_pseudo) + ' gagne !'; done = true; }
+                    else if (!e.board.includes('')) { e.gagnant = 'Match nul !'; done = true; }
+                    e.tour = salonState.role === 'hote' ? 'invite' : 'hote';
+                    await syncSalon({
+                        etat_jeu: e,
+                        termine: done,
+                        pts_hote: e.gagnant && e.gagnant.startsWith(salonState.hote_pseudo) ? 140 : 60,
+                        pts_invite: e.gagnant && e.gagnant.startsWith(salonState.invite_pseudo) ? 140 : 60
+                    });
+                });
+            }
+            return;
+        }
+
         useDomMode('Aligne 3 symboles X pour battre l\'IA !');
         const b = Array(9).fill('');
-        const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-        const check = s => lines.some(l => l.every(i => b[i] === s));
         function render() {
             domArea.innerHTML = `<div class="ttt-grid">${b.map((v, i) => `<div class="ttt-cell" data-i="${i}" style="color:${v==='X'?'#38bdf8':'#f43f5e'}">${v}</div>`).join('')}</div>`;
             domArea.querySelectorAll('.ttt-cell').forEach(el => el.onclick = () => {
                 const i = +el.dataset.i; if (b[i] || finished) return;
                 b[i] = 'X';
-                if (check('X')) { render(); return finishGame(110, 'Victoire au Morpion !'); }
+                if (check(b, 'X')) { render(); return finishGame(110, 'Victoire au Morpion !'); }
                 const free = b.map((v, idx) => v === '' ? idx : -1).filter(x => x >= 0);
                 if (!free.length) { render(); return finishGame(50, 'Match nul !'); }
                 b[free[Math.floor(Math.random() * free.length)]] = 'O';
                 render();
-                if (check('O')) finishGame(20, 'Défaite au Morpion !');
+                if (check(b, 'O')) finishGame(20, 'Défaite au Morpion !');
             });
         }
         render();
     },
 
     'pfc'() {
+        const coups = ['Pierre', 'Feuille', 'Ciseaux'];
+        if (SALON && salonState) {
+            useDomMode('Duel Pierre-Feuille-Ciseaux en ligne (Premier à 3 points) !');
+            const e = salonState.etat_jeu;
+            const myChoice = salonState.role === 'hote' ? e.choix_hote : e.choix_invite;
+            domArea.innerHTML = `
+                <h2>${salonState.hote_pseudo} ${salonState.score_hote} - ${salonState.score_invite} ${salonState.invite_pseudo}</h2>
+                <p>${e.info}</p>
+                ${e.gagnant ? `<h3 style="color:#fbbf24;">🏆 ${e.gagnant} remporte le match !</h3>` :
+                    (myChoice ? `<p>Ton choix (<strong>${myChoice}</strong>) est verrouillé. En attente de ton ami...</p>` :
+                    `<div style="display:flex;gap:12px;">${coups.map(c => `<button class="btn btn-primary" data-c="${c}">${c}</button>`).join('')}</div>`)}
+            `;
+            domArea.querySelectorAll('button').forEach(btn => btn.onclick = async () => {
+                if (salonState.role === 'hote') e.choix_hote = btn.dataset.c;
+                else e.choix_invite = btn.dataset.c;
+
+                let sh = salonState.score_hote, si = salonState.score_invite;
+                if (e.choix_hote && e.choix_invite) {
+                    const h = e.choix_hote, i = e.choix_invite;
+                    if (h === i) e.info = `Manche ${e.manche} : Égalité (${h} vs ${i})`;
+                    else if ((h==='Pierre'&&i==='Ciseaux')||(h==='Feuille'&&i==='Pierre')||(h==='Ciseaux'&&i==='Feuille')) { sh++; e.info = `${salonState.hote_pseudo} gagne la manche (${h} bat ${i}) !`; }
+                    else { si++; e.info = `${salonState.invite_pseudo} gagne la manche (${i} bat ${h}) !`; }
+                    e.choix_hote = null; e.choix_invite = null; e.manche++;
+                    if (sh >= 3) e.gagnant = salonState.hote_pseudo;
+                    if (si >= 3) e.gagnant = salonState.invite_pseudo;
+                }
+                await fetch('api/salon.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'jouer',
+                        code: SALON,
+                        etat_jeu: e,
+                        score: salonState.role === 'hote' ? sh : si,
+                        termine: !!e.gagnant,
+                        pts_hote: sh >= 3 ? 140 : 45,
+                        pts_invite: si >= 3 ? 140 : 45
+                    })
+                });
+            });
+            return;
+        }
+
         useDomMode('Premier à 3 manches gagnantes !');
         let ps = 0, as = 0, msg = 'Choisis ton coup :';
-        const coups = ['Pierre', 'Feuille', 'Ciseaux'];
         function render() {
             domArea.innerHTML = `
                 <h2>${ps} - ${as}</h2><p>${msg}</p>
@@ -512,4 +692,43 @@ const games = {
     }
 };
 
-if (games[window.GAME_CONFIG.slug]) games[window.GAME_CONFIG.slug]();
+const pvpSlugs = ['morpion', 'puissance-4', 'pfc', 'ludo'];
+let gameBooted = false;
+
+async function pollSalon() {
+    const res = await fetch(`api/salon.php?action=etat&code=${encodeURIComponent(SALON)}`);
+    const data = await res.json();
+    if (!data.ok) return;
+    salonState = data;
+
+    playersStatus.innerHTML = `👑 ${data.hote_pseudo} (${data.score_hote}) &nbsp;vs&nbsp; 🎮 ${data.invite_pseudo || 'En attente...'} (${data.score_invite})`;
+
+    if (data.statut === 'attente') {
+        waitingRoom.style.display = 'flex';
+        canvas.style.display = 'none';
+        domArea.style.display = 'none';
+        return;
+    }
+
+    waitingRoom.style.display = 'none';
+    if (pvpSlugs.includes(window.GAME_CONFIG.slug)) {
+        games[window.GAME_CONFIG.slug]();
+    } else if (!gameBooted) {
+        gameBooted = true;
+        canvas.style.display = 'block';
+        games[window.GAME_CONFIG.slug]();
+    }
+
+    if (data.statut === 'termine' && !pvpSlugs.includes(window.GAME_CONFIG.slug)) {
+        victoryBox.style.display = 'block';
+        victoryBox.innerHTML = `<h2>🏆 Duel terminé !</h2><p>👑 ${data.hote_pseudo} : <strong>${data.score_hote} pts</strong> vs 🎮 ${data.invite_pseudo} : <strong>${data.score_invite} pts</strong></p><a href="index.php" class="btn btn-primary" style="margin-top:10px;">Retour au lobby</a>`;
+    }
+}
+
+if (SALON) {
+    canvas.style.display = 'none';
+    pollSalon();
+    setInterval(pollSalon, 1000);
+} else if (games[window.GAME_CONFIG.slug]) {
+    games[window.GAME_CONFIG.slug]();
+}

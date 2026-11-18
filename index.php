@@ -57,8 +57,8 @@ if (isset($_SESSION['joueur_id'])) {
     <div class="container">
         <section class="hero-banner">
             <div>
-                <h1>Joue. Défie. Grimpe au classement.</h1>
-                <p>18 mini-jeux instantanés inspirés de Plato : sport, plateau, cartes et arcade. Chaque victoire crédite automatiquement ton profil.</p>
+                <h1>Joue. Défie tes amis. Grimpe au classement.</h1>
+                <p>Crée un salon privé sur n'importe quel jeu, partage ton code à 6 caractères à tes amis et affrontez-vous en direct !</p>
             </div>
             <div class="hero-stats">
                 <div class="stat-box">
@@ -76,6 +76,17 @@ if (isset($_SESSION['joueur_id'])) {
                     </div>
                 <?php endif; ?>
             </div>
+        </section>
+
+        <section class="room-bar">
+            <div>
+                <strong>👥 Jouer entre amis</strong>
+                <p style="font-size:0.85rem;color:var(--text-muted);">Ton ami t'a envoyé un code ? Entre-le ici pour rejoindre sa partie :</p>
+            </div>
+            <form id="joinRoomForm" class="room-join-form">
+                <input type="text" id="roomCodeInput" class="form-control code-input" maxlength="6" placeholder="CODE" required>
+                <button type="submit" class="btn btn-primary">Rejoindre</button>
+            </form>
         </section>
 
         <div class="filter-bar">
@@ -97,9 +108,14 @@ if (isset($_SESSION['joueur_id'])) {
                         <div class="game-body">
                             <h3><?= htmlspecialchars($jeu['nom']) ?></h3>
                             <p><?= htmlspecialchars($jeu['description']) ?></p>
-                            <a href="jeu.php?slug=<?= urlencode($jeu['slug']) ?>" class="btn-play" style="background: <?= htmlspecialchars($jeu['couleur']) ?>;">
-                                Jouer maintenant
-                            </a>
+                            <div class="card-actions">
+                                <a href="jeu.php?slug=<?= urlencode($jeu['slug']) ?>" class="btn-play" style="background: <?= htmlspecialchars($jeu['couleur']) ?>; flex:1;">
+                                    Solo
+                                </a>
+                                <button type="button" class="btn-room" onclick="creerSalon('<?= htmlspecialchars($jeu['slug']) ?>')" title="Créer un salon avec code ami">
+                                    👥 Amis
+                                </button>
+                            </div>
                         </div>
                     </article>
                 <?php endforeach; ?>
@@ -148,6 +164,38 @@ if (isset($_SESSION['joueur_id'])) {
                     card.style.display = (cat === 'ALL' || card.dataset.cat === cat) ? 'flex' : 'none';
                 });
             });
+        });
+
+        async function creerSalon(slug) {
+            const res = await fetch('api/salon.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'creer', slug })
+            });
+            if (res.status === 401) { window.location.href = 'login.php'; return; }
+            const data = await res.json();
+            if (data.ok) {
+                window.location.href = `jeu.php?slug=${encodeURIComponent(data.slug)}&salon=${encodeURIComponent(data.code)}`;
+            } else {
+                alert(data.erreur || 'Impossible de créer le salon.');
+            }
+        }
+
+        document.getElementById('joinRoomForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            const res = await fetch('api/salon.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'rejoindre', code })
+            });
+            if (res.status === 401) { window.location.href = 'login.php'; return; }
+            const data = await res.json();
+            if (data.ok) {
+                window.location.href = `jeu.php?slug=${encodeURIComponent(data.slug)}&salon=${encodeURIComponent(data.code)}`;
+            } else {
+                alert(data.erreur || 'Code invalide.');
+            }
         });
     </script>
 </body>

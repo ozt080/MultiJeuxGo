@@ -432,3 +432,75 @@ a { color: inherit; text-decoration: none; }
 .c4-cell { width: 48px; height: 48px; border-radius: 50%; background: #0b0e1a; cursor: pointer; }
 .ttt-grid { display: grid; grid-template-columns: repeat(3, 92px); gap: 8px; }
 .ttt-cell { width: 92px; height: 92px; border-radius: 14px; background: var(--bg-card); font-size: 2.2rem; font-weight: 800; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border-subtle); }
+
+/* Salons multijoueur entre amis */
+.room-bar {
+    background: var(--bg-surface);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 18px;
+    padding: 16px 22px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+}
+
+.room-join-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.code-input {
+    width: 150px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-room {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-room:hover { background: rgba(99, 102, 241, 0.35); }
+
+.salon-hud {
+    background: linear-gradient(135deg, #1e1b4b, #172554);
+    border: 1px solid rgba(99, 102, 241, 0.45);
+    border-radius: 18px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.invite-code-badge {
+    background: #0b0e1a;
+    border: 1px dashed #818cf8;
+    color: #fbbf24;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-family: monospace;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
