@@ -31,7 +31,9 @@ if (!$jeu) {
     <div class="arena-wrapper">
         <div class="arena-header">
             <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:2rem;"><?= htmlspecialchars($jeu['icone']) ?></span>
+                <img src="assets/img/jeux/<?= htmlspecialchars($jeu['slug']) ?>.svg"
+     alt="<?= htmlspecialchars($jeu['nom']) ?>"
+     style="width:68px;height:42px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.15);">
                 <div>
                     <h1 style="font-size:1.3rem;"><?= htmlspecialchars($jeu['nom']) ?></h1>
                     <span style="font-size:0.82rem;color:var(--text-muted);"><?= $salonCode ? 'Salon privé multijoueur' : htmlspecialchars($jeu['categorie']) ?></span>

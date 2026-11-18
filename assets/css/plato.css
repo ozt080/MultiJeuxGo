@@ -504,3 +504,25 @@ a { color: inherit; text-decoration: none; }
     font-weight: 800;
     letter-spacing: 3px;
 }
+
+/* Illustrations SVG des jeux */
+.game-banner {
+    padding: 0;
+    overflow: hidden;
+}
+
+.game-art {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s ease;
+}
+
+.game-card:hover .game-art {
+    transform: scale(1.06);
+}
+
+.game-cat-tag {
+    z-index: 2;
+}

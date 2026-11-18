@@ -101,10 +101,12 @@ if (isset($_SESSION['joueur_id'])) {
             <main class="games-grid" id="gamesGrid">
                 <?php foreach ($jeux as $jeu): ?>
                     <article class="game-card" data-cat="<?= htmlspecialchars($jeu['categorie']) ?>">
-                        <div class="game-banner" style="background: linear-gradient(135deg, <?= htmlspecialchars($jeu['couleur']) ?>, #0f172a);">
-                            <span class="game-cat-tag"><?= htmlspecialchars($jeu['categorie']) ?></span>
-                            <span><?= htmlspecialchars($jeu['icone']) ?></span>
-                        </div>
+                        <div class="game-banner" style="background: <?= htmlspecialchars($jeu['couleur']) ?>;">
+    <span class="game-cat-tag"><?= htmlspecialchars($jeu['categorie']) ?></span>
+    <img src="assets/img/jeux/<?= htmlspecialchars($jeu['slug']) ?>.svg"
+         alt="<?= htmlspecialchars($jeu['nom']) ?>"
+         class="game-art">
+</div>
                         <div class="game-body">
                             <h3><?= htmlspecialchars($jeu['nom']) ?></h3>
                             <p><?= htmlspecialchars($jeu['description']) ?></p>
