@@ -44,3 +44,16 @@ CREATE TABLE IF NOT EXISTS salons (
     FOREIGN KEY (id_hote) REFERENCES joueurs(id) ON DELETE CASCADE,
     FOREIGN KEY (id_invite) REFERENCES joueurs(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_expediteur INT NOT NULL,
+    id_destinataire INT DEFAULT NULL,
+    code_salon VARCHAR(8) DEFAULT NULL,
+    contenu VARCHAR(500) NOT NULL,
+    envoye_le DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_salon (code_salon),
+    INDEX idx_prive (id_expediteur, id_destinataire),
+    FOREIGN KEY (id_expediteur) REFERENCES joueurs(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_destinataire) REFERENCES joueurs(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

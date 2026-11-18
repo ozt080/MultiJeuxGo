@@ -89,5 +89,12 @@ if (!$jeu) {
         }
     </script>
     <script src="assets/js/games.js"></script>
+    <script>
+    window.CHAT_USER = {
+        id: <?= (int)$_SESSION['joueur_id'] ?>,
+        pseudo: <?= json_encode($_SESSION['joueur_pseudo']) ?>
+    };
+</script>
+<script src="assets/js/chat.js"></script>
 </body>
 </html>

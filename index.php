@@ -200,5 +200,14 @@ if (isset($_SESSION['joueur_id'])) {
             }
         });
     </script>
+<?php if (isset($_SESSION['joueur_id'])): ?>
+    <script>
+        window.CHAT_USER = {
+            id: <?= (int)$_SESSION['joueur_id'] ?>,
+            pseudo: <?= json_encode($_SESSION['joueur_pseudo']) ?>
+        };
+    </script>
+    <script src="assets/js/chat.js"></script>
+<?php endif; ?>
 </body>
 </html>
