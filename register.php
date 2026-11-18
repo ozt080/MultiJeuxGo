@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once __DIR__ . '/config/db.php';
-
 $erreur = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -10,11 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mdp    = $_POST['mot_de_passe'] ?? '';
 
     if ($pseudo === '' || $email === '' || strlen($mdp) < 6) {
-        $erreur = "Tous les champs sont obligatoires (6 caractères minimum pour le mot de passe).";
+        $erreur = "Tous les champs sont obligatoires (6 caractères minimum).";
     } else {
         $verif = $pdo->prepare("SELECT id FROM joueurs WHERE email = ? OR pseudo = ?");
         $verif->execute([$email, $pseudo]);
-
         if ($verif->fetch()) {
             $erreur = "Ce pseudo ou cet email est déjà utilisé.";
         } else {
@@ -32,22 +30,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Inscription - MultiJeuxGo</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 15px; }
-        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
-        button { background: #2563eb; color: #fff; border: none; cursor: pointer; }
-        .err { color: #dc2626; }
-    </style>
+    <link rel="stylesheet" href="assets/css/plato.css">
 </head>
 <body>
-    <h1>Créer un compte</h1>
-    <?php if ($erreur): ?><p class="err"><?= htmlspecialchars($erreur) ?></p><?php endif; ?>
-    <form method="post">
-        <input type="text" name="pseudo" placeholder="Pseudo" required>
-        <input type="email" name="email" placeholder="Adresse email" required>
-        <input type="password" name="mot_de_passe" placeholder="Mot de passe (6 car. min)" required>
-        <button type="submit">S'inscrire</button>
-    </form>
-    <p><a href="login.php">Déjà inscrit ? Se connecter</a> | <a href="index.php">Accueil</a></p>
+    <div class="auth-card">
+        <h1>Rejoins l'arène 🚀</h1>
+        <p class="sub">Crée ton profil joueur sur MultiJeuxGo.</p>
+        <?php if ($erreur): ?><div class="alert alert-err"><?= htmlspecialchars($erreur) ?></div><?php endif; ?>
+        <form method="post">
+            <div class="form-group">
+                <label>Pseudo joueur</label>
+                <input class="form-control" type="text" name="pseudo" required>
+            </div>
+            <div class="form-group">
+                <label>Adresse email</label>
+                <input class="form-control" type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>Mot de passe (6 car. min)</label>
+                <input class="form-control" type="password" name="mot_de_passe" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Créer mon compte</button>
+        </form>
+        <p style="margin-top:16px;font-size:0.88rem;color:var(--text-muted);text-align:center;">
+            Déjà inscrit ? <a href="login.php" style="color:#818cf8;font-weight:700;">Connexion</a> · <a href="index.php">Lobby</a>
+        </p>
+    </div>
 </body>
 </html>
