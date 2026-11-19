@@ -32,14 +32,15 @@ if (!$jeu) {
         <div class="arena-header">
             <div style="display:flex;align-items:center;gap:12px;">
                 <img src="assets/img/jeux/<?= htmlspecialchars($jeu['slug']) ?>.svg"
-     alt="<?= htmlspecialchars($jeu['nom']) ?>"
-     style="width:68px;height:42px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.15);">
+                     alt="<?= htmlspecialchars($jeu['nom']) ?>"
+                     style="width:68px;height:42px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.15);">
                 <div>
                     <h1 style="font-size:1.3rem;"><?= htmlspecialchars($jeu['nom']) ?></h1>
                     <span style="font-size:0.82rem;color:var(--text-muted);"><?= $salonCode ? 'Salon privé multijoueur' : htmlspecialchars($jeu['categorie']) ?></span>
                 </div>
             </div>
-            <div style="display:flex;gap:10px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+                <button type="button" id="soundToggleBtn" class="btn btn-ghost" onclick="toggleSound()">🔊 Son</button>
                 <?php if (!$salonCode): ?>
                     <button onclick="location.reload()" class="btn btn-ghost">↻ Rejouer</button>
                 <?php endif; ?>
@@ -67,7 +68,7 @@ if (!$jeu) {
                     Envoie le code <strong style="color:#fbbf24;font-size:1.1rem;"><?= htmlspecialchars($salonCode) ?></strong> à ton ami. Dès qu'il l'entre sur la page d'accueil, la partie démarre automatiquement !
                 </p>
             </div>
-            <canvas id="gameCanvas" width="760" height="440"></canvas>
+            <canvas id="gameCanvas" width="760" height="460"></canvas>
             <div id="domGameArea" class="dom-arena" style="display:none;"></div>
             <p id="controlsHint" class="controls-hint"></p>
             <div id="victoryBox" class="victory-banner" style="display:none;"></div>
@@ -90,11 +91,11 @@ if (!$jeu) {
     </script>
     <script src="assets/js/games.js"></script>
     <script>
-    window.CHAT_USER = {
-        id: <?= (int)$_SESSION['joueur_id'] ?>,
-        pseudo: <?= json_encode($_SESSION['joueur_pseudo']) ?>
-    };
-</script>
-<script src="assets/js/chat.js"></script>
+        window.CHAT_USER = {
+            id: <?= (int)$_SESSION['joueur_id'] ?>,
+            pseudo: <?= json_encode($_SESSION['joueur_pseudo']) ?>
+        };
+    </script>
+    <script src="assets/js/chat.js"></script>
 </body>
 </html>

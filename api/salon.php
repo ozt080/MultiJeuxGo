@@ -29,12 +29,58 @@ function genererCodeSalon(PDO $pdo): string {
     return $code;
 }
 
+function carteUnoAleatoire(bool $numeriqueSeulement = false): array {
+    $couleurs = ['#ef4444', '#3b82f6', '#22c55e', '#eab308'];
+    if ($numeriqueSeulement) {
+        return ['c' => $couleurs[random_int(0, 3)], 'v' => (string)random_int(1, 9)];
+    }
+    $r = random_int(1, 100);
+    if ($r <= 68) {
+        return ['c' => $couleurs[random_int(0, 3)], 'v' => (string)random_int(1, 9)];
+    } elseif ($r <= 80) {
+        return ['c' => $couleurs[random_int(0, 3)], 'v' => '+2'];
+    } elseif ($r <= 90) {
+        return ['c' => $couleurs[random_int(0, 3)], 'v' => '🚫'];
+    } elseif ($r <= 96) {
+        return ['c' => '#1e293b', 'v' => '🎨'];
+    } else {
+        return ['c' => '#1e293b', 'v' => '+4'];
+    }
+}
+
 function etatInitial(string $slug): array {
+    if ($slug === 'uno') {
+        $h1 = [];
+        $h2 = [];
+        for ($i = 0; $i < 7; $i++) {
+            $h1[] = carteUnoAleatoire();
+            $h2[] = carteUnoAleatoire();
+        }
+        return [
+            'top' => carteUnoAleatoire(true),
+            'hand_hote' => $h1,
+            'hand_invite' => $h2,
+            'tour' => 'hote',
+            'info' => 'La partie commence !',
+            'gagnant' => null
+        ];
+    }
+
     return match ($slug) {
         'morpion'     => ['board' => array_fill(0, 9, ''), 'tour' => 'hote', 'gagnant' => null],
         'puissance-4' => ['grid' => array_fill(0, 6, array_fill(0, 7, 0)), 'tour' => 'hote', 'gagnant' => null],
-        'pfc'         => ['choix_hote' => null, 'choix_invite' => null, 'manche' => 1, 'info' => 'Choisissez votre coup !', 'gagnant' => null],
-        'ludo'        => ['pos_hote' => 0, 'pos_invite' => 0, 'tour' => 'hote', 'de' => '-', 'gagnant' => null],
+        'pfc'         => ['choix_hote' => null, 'choix_invite' => null, 'manche' => 1, 'hp_hote' => 100, 'hp_invite' => 100, 'info' => 'Choisissez votre coup !', 'gagnant' => null],
+        'ludo'        => ['pions_hote' => [0, 0], 'pions_invite' => [0, 0], 'tour' => 'hote', 'de' => null, 'peut_jouer' => false, 'info' => 'Lance le dé pour démarrer !', 'gagnant' => null],
+        'foot-soccer' => [
+            'ball' => ['x' => 380, 'y' => 230],
+            'hote' => [['x' => 180, 'y' => 130], ['x' => 130, 'y' => 230], ['x' => 180, 'y' => 330]],
+            'invite' => [['x' => 580, 'y' => 130], ['x' => 630, 'y' => 230], ['x' => 580, 'y' => 330]],
+            'buts_hote' => 0,
+            'buts_invite' => 0,
+            'tour' => 'hote',
+            'gagnant' => null
+        ],
+        'billard'     => ['balls' => null, 'tour' => 'hote', 'gagnant' => null],
         default       => ['mode' => 'duel', 'hote_fini' => false, 'invite_fini' => false, 'gagnant' => null],
     };
 }
